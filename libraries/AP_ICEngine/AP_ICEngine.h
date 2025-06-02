@@ -63,9 +63,6 @@ public:
     // handle DO_ENGINE_CONTROL messages via MAVLink or mission
     bool engine_control(float start_control, float cold_start, float height_delay, uint32_t flags);
 
-    // update min throttle for idle governor
-    void update_idle_governor(int8_t &min_throttle);
-
     // do we have throttle while disarmed enabled?
     bool allow_throttle_while_disarmed(void) const;
 
@@ -73,6 +70,8 @@ public:
     // Needed for param conversion from relay numbers to functions
     bool get_legacy_ignition_relay_index(int8_t &num);
 #endif
+
+    int8_t get_min_throttle_pct() const { return min_throttle_pct; }
 
     static AP_ICEngine *get_singleton() { return _singleton; }
 
@@ -84,7 +83,13 @@ private:
 
     enum ICE_State state;
 
+    // Minimum throttle for idle (from idle_percent or idle governor)
+    int8_t min_throttle_pct;
+
 #if AP_RPM_ENABLED
+    // update min throttle for idle governor
+    void update_idle_governor(int8_t &min_throttle);
+
     // filter for RPM value
     LowPassFilterConstDtFloat _rpm_filter;
     float filtered_rpm_value;
