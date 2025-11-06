@@ -3243,8 +3243,8 @@ class AutoTestCopter(vehicle_test_suite.TestSuite):
             # this stops us using local servo output, guaranteeing we are
             # flying on DroneCAN ESCs
             "SIM_CAN_SRV_MSK" : 0xFF,
-            # we can do the flight faster
-            "SIM_SPEEDUP" : 5,
+            # ~~we can do the flight faster~~
+            # "SIM_SPEEDUP" : 5, (Carbonix: no, it seems we can't do the flight faster)
         })
 
         self.CopterMission()
