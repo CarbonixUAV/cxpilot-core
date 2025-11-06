@@ -1383,6 +1383,30 @@ void AP_DroneCAN::handle_actuator_status(const CanardRxTransfer& transfer, const
 #endif
 }
 
+#if AP_DRONECAN_LOG_CIRCUITSTATUS_ENABLED && HAL_LOGGING_ENABLED
+void AP_DroneCAN::handle_circuit_status(const CanardRxTransfer& transfer, const uavcan_equipment_power_CircuitStatus& msg)
+{
+    // @LoggerMessage: DCCS
+    // @Description: DroneCAN Circuit Status: generic electrical info
+    // @Field: TimeUS: Time since system startup
+    // @Field: Id: Circuit identifier
+    // @Field: Voltage: Circuit voltage in volts
+    // @Field: Current: Circuit current in amps
+    // @Field: Error: Error flags
+    AP::logger().WriteStreaming(
+        "DCCS",
+        "TimeUS," "Id," "Voltage," "Current," "Error",
+        "s"       "#"   "v"        "A"        "-",
+        "F"       "-"   "0"        "0"        "-",
+        "Q"       "H"   "f"        "f"        "B",
+        AP_HAL::micros64(),
+        msg.circuit_id,
+        msg.voltage,
+        msg.current,
+        msg.error_flags);
+}
+#endif
+
 #if AP_DRONECAN_HIMARK_SERVO_SUPPORT
 /*
   handle himark ServoInfo message
