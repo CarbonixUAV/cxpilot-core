@@ -68,6 +68,10 @@
 #define AP_DRONECAN_VOLZ_FEEDBACK_ENABLED 0
 #endif
 
+#ifndef AP_DRONECAN_LOG_CIRCUITSTATUS_ENABLED
+#define AP_DRONECAN_LOG_CIRCUITSTATUS_ENABLED (BOARD_FLASH_SIZE>1024)
+#endif
+
 #if AP_DRONECAN_SERIAL_ENABLED
 #include "AP_DroneCAN_serial.h"
 #endif
@@ -341,6 +345,11 @@ private:
     Canard::Subscriber<uavcan_equipment_esc_StatusExtended> esc_status_extended_listener{esc_status_extended_cb, _driver_index};
 #endif
 
+#if AP_DRONECAN_LOG_CIRCUITSTATUS_ENABLED && HAL_LOGGING_ENABLED
+    Canard::ObjCallback<AP_DroneCAN, uavcan_equipment_power_CircuitStatus> circuit_status_cb{this, &AP_DroneCAN::handle_circuit_status};
+    Canard::Subscriber<uavcan_equipment_power_CircuitStatus> circuit_status_listener{circuit_status_cb, _driver_index};
+#endif
+
     Canard::ObjCallback<AP_DroneCAN, uavcan_protocol_debug_LogMessage> debug_cb{this, &AP_DroneCAN::handle_debug};
     Canard::Subscriber<uavcan_protocol_debug_LogMessage> debug_listener{debug_cb, _driver_index};
 
@@ -404,6 +413,10 @@ private:
 
 #if AP_DRONECAN_HIMARK_SERVO_SUPPORT
     void handle_himark_servoinfo(const CanardRxTransfer& transfer, const com_himark_servo_ServoInfo &msg);
+#endif
+
+#if AP_DRONECAN_LOG_CIRCUITSTATUS_ENABLED && HAL_LOGGING_ENABLED
+    void handle_circuit_status(const CanardRxTransfer& transfer, const uavcan_equipment_power_CircuitStatus& msg);
 #endif
     
     // incoming button handling
