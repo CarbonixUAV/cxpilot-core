@@ -1407,6 +1407,28 @@ void AP_DroneCAN::handle_circuit_status(const CanardRxTransfer& transfer, const 
 }
 #endif
 
+#if AP_DRONECAN_LOG_TEMPERATURE_ENABLED && HAL_LOGGING_ENABLED
+void AP_DroneCAN::handle_temperature(const CanardRxTransfer& transfer, const uavcan_equipment_device_Temperature& msg)
+{
+    // @LoggerMessage: DCTS
+    // @Description: DroneCAN Temperature Sensor: temperature reading from a sensor
+    // @Field: TimeUS: Time since system startup
+    // @Field: Id: Device identifier
+    // @Field: Temperature: Temperature in degrees Celsius
+    // @Field: Error: Error flags
+    AP::logger().WriteStreaming(
+        "DCTS",
+        "TimeUS," "Id," "Temperature," "Error",
+        "s"       "#"   "O"            "-",
+        "F"       "-"   "0"            "-",
+        "Q"       "H"   "f"            "B",
+        AP_HAL::micros64(),
+        msg.device_id,
+        msg.temperature, // The message specifies Kelvin, but the MKS servos send Celsius, so we don't convert here
+        msg.error_flags);
+}
+#endif
+
 #if AP_DRONECAN_HIMARK_SERVO_SUPPORT
 /*
   handle himark ServoInfo message
