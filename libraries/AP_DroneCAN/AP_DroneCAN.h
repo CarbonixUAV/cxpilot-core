@@ -68,6 +68,10 @@
 #define AP_DRONECAN_LOG_CIRCUITSTATUS_ENABLED (BOARD_FLASH_SIZE>1024)
 #endif
 
+#ifndef AP_DRONECAN_LOG_TEMPERATURE_ENABLED
+#define AP_DRONECAN_LOG_TEMPERATURE_ENABLED (BOARD_FLASH_SIZE>1024)
+#endif
+
 #if AP_DRONECAN_SERIAL_ENABLED
 #include "AP_DroneCAN_serial.h"
 #endif
@@ -342,6 +346,11 @@ private:
     Canard::Subscriber<uavcan_equipment_power_CircuitStatus> circuit_status_listener{circuit_status_cb, _driver_index};
 #endif
 
+#if AP_DRONECAN_LOG_TEMPERATURE_ENABLED
+    Canard::ObjCallback<AP_DroneCAN, uavcan_equipment_device_Temperature> temperature_cb{this, &AP_DroneCAN::handle_temperature};
+    Canard::Subscriber<uavcan_equipment_device_Temperature> temperature_listener{temperature_cb, _driver_index};
+#endif
+
     Canard::ObjCallback<AP_DroneCAN, uavcan_protocol_debug_LogMessage> debug_cb{this, &AP_DroneCAN::handle_debug};
     Canard::Subscriber<uavcan_protocol_debug_LogMessage> debug_listener{debug_cb, _driver_index};
 
@@ -399,6 +408,10 @@ private:
 
 #if AP_DRONECAN_LOG_CIRCUITSTATUS_ENABLED && HAL_LOGGING_ENABLED
     void handle_circuit_status(const CanardRxTransfer& transfer, const uavcan_equipment_power_CircuitStatus& msg);
+#endif
+
+#if AP_DRONECAN_LOG_TEMPERATURE_ENABLED && HAL_LOGGING_ENABLED
+    void handle_temperature(const CanardRxTransfer& transfer, const uavcan_equipment_device_Temperature& msg);
 #endif
     
     // incoming button handling
