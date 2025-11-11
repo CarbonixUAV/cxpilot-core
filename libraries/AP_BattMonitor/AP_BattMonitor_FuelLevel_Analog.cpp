@@ -56,6 +56,7 @@ const AP_Param::GroupInfo AP_BattMonitor_FuelLevel_Analog::var_info[] = {
     // @DisplayName: Fuel level analog pin number
     // @Description: Analog input pin that fuel level sensor is connected to. Airspeed ports can be used for Analog input. When using analog pin 103, the maximum value of the input in 3.3V.
     // @Values: -1:Not Used,11:Pixracer,13:Pixhawk ADC4,14:Pixhawk ADC3,15:Pixhawk ADC6/Pixhawk2 ADC,103:Pixhawk SBUS
+    // @Range: -1 127
     AP_GROUPINFO("FL_PIN", 43, AP_BattMonitor_FuelLevel_Analog, _pin, -1),
 
  // index 44 unused and available
