@@ -85,7 +85,11 @@ jobs:
           - config: disco
             toolchain: chibios
     steps:
-      - uses: actions/checkout@v4
+<<<<<<< HEAD
+      - uses: actions/checkout@v6
+=======
+      - uses: actions/checkout@v6
+>>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           path: base_branch
@@ -174,7 +178,11 @@ jobs:
 
           echo [`date`] Built ${{ github.event.pull_request.base.ref }} with no versions
 
-      - uses: actions/checkout@v4
+<<<<<<< HEAD
+      - uses: actions/checkout@v6
+=======
+      - uses: actions/checkout@v6
+>>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           fetch-depth: 0
           path: 'pr'
