@@ -170,7 +170,11 @@ jobs:
         ]
     steps:
       # git checkout the PR
-      - uses: actions/checkout@v4
+<<<<<<< HEAD
+      - uses: actions/checkout@v6
+=======
+      - uses: actions/checkout@v6
+>>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           submodules: 'recursive'
 
@@ -224,7 +228,11 @@ jobs:
 
     steps:
       # git checkout the PR
-      - uses: actions/checkout@v4
+<<<<<<< HEAD
+      - uses: actions/checkout@v6
+=======
+      - uses: actions/checkout@v6
+>>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           submodules: 'recursive'
 
@@ -292,7 +300,11 @@ jobs:
       options: --privileged --cap-add=SYS_PTRACE --security-opt apparmor=unconfined --security-opt seccomp=unconfined
     steps:
       # git checkout the PR
-      - uses: actions/checkout@v4
+<<<<<<< HEAD
+      - uses: actions/checkout@v6
+=======
+      - uses: actions/checkout@v6
+>>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           submodules: 'recursive'
       # Put ccache into github cache for faster build
@@ -333,7 +345,11 @@ jobs:
 
     steps:
       # git checkout the PR
-      - uses: actions/checkout@v4
+<<<<<<< HEAD
+      - uses: actions/checkout@v6
+=======
+      - uses: actions/checkout@v6
+>>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           submodules: 'recursive'
       # Put ccache into github cache for faster build

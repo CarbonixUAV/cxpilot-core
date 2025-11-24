@@ -160,7 +160,11 @@ jobs:
         ]
     steps:
       # git checkout the PR
-      - uses: actions/checkout@v4
+<<<<<<< HEAD
+      - uses: actions/checkout@v6
+=======
+      - uses: actions/checkout@v6
+>>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           submodules: 'recursive'
       # Put ccache into github cache for faster build
