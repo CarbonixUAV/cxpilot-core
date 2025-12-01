@@ -30,7 +30,17 @@ parser.add_argument("--no-emit",
                     dest='emit_params',
                     action='store_false',
                     default=True,
-                    help="don't emit parameter documention, just validate")
+                    help="don't emit parameter documentation, just validate")
+parser.add_argument("--legacy-params",
+                    dest='emit_legacy_params',
+                    action='store_true',
+                    default=None,
+                    help="include legacy parameters in output (default depends on format)")
+parser.add_argument("--no-legacy-params",
+                    dest='emit_legacy_params',
+                    action='store_false',
+                    default=None,
+                    help="don't include legacy parameters in output (default depends on format)")
 parser.add_argument("--format",
                     dest='output_format',
                     action='store',
@@ -656,6 +666,14 @@ for emitter_name in all_emitters.keys():
 # actually invoke each emitter:
 for emitter_name in emitters_to_use:
     emit = all_emitters[emitter_name]()
+
+    emit.emit_legacy_params = args.emit_legacy_params
+    if emit.emit_legacy_params is None:
+        if emitter_name in ('rst', 'rstlatexpdf'):
+            # do not emit legacy parameters to the Wiki
+            emit.emit_legacy_params = False
+        else:
+            emit.emit_legacy_params = True
 
     emit.emit(vehicle)
 
