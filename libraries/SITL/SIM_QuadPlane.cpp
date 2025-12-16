@@ -141,6 +141,7 @@ void QuadPlane::update(const struct sitl_input &input)
         throttle = filtered_servo_angle(input, 2);
     } else {
         throttle = filtered_servo_range(input, 2);
+        throttle = constrain_float(throttle, 0, 1);
     }
     // assume 20A at full fwd throttle
     throttle = fabsf(throttle);
