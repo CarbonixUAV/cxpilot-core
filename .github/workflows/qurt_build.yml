@@ -166,7 +166,11 @@ jobs:
           libraries/AP_HAL_QURT/packaging/make_package.sh Rover ardurover
 
       - name: Archive build
-        uses: actions/upload-artifact@v4
+<<<<<<< HEAD
+        uses: actions/upload-artifact@v6
+=======
+        uses: actions/upload-artifact@v6
+>>>>>>> 986c492ee1 (.github: Bump the github-actions group with 2 updates)
         with:
           name: qurt-binaries
           path: |
