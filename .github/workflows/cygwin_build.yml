@@ -143,11 +143,7 @@ jobs:
     runs-on: 'windows-latest'
 
     steps:
-<<<<<<< HEAD
       - uses: actions/checkout@v6
-=======
-      - uses: actions/checkout@v6
->>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           submodules: 'recursive'
       - name: Prepare ccache timestamp
@@ -222,11 +218,7 @@ jobs:
           fail: true
 
       - name: Archive build
-<<<<<<< HEAD
         uses: actions/upload-artifact@v6
-=======
-        uses: actions/upload-artifact@v6
->>>>>>> 986c492ee1 (.github: Bump the github-actions group with 2 updates)
         with:
           name: binaries
           path: artifacts
