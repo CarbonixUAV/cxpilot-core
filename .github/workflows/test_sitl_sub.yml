@@ -173,11 +173,7 @@ jobs:
         ]
     steps:
       # git checkout the PR
-<<<<<<< HEAD
       - uses: actions/checkout@v6
-=======
-      - uses: actions/checkout@v6
->>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           submodules: 'recursive'
 
@@ -225,11 +221,7 @@ jobs:
 
     steps:
       # git checkout the PR
-<<<<<<< HEAD
       - uses: actions/checkout@v6
-=======
-      - uses: actions/checkout@v6
->>>>>>> 23ccb666b0 (.github: Bump actions/checkout from 5 to 6 in the github-actions group)
         with:
           submodules: 'recursive'
 
@@ -270,11 +262,7 @@ jobs:
           Tools/scripts/build_ci.sh
 
       - name: Archive buildlog artifacts
-<<<<<<< HEAD
         uses: actions/upload-artifact@v6
-=======
-        uses: actions/upload-artifact@v6
->>>>>>> 986c492ee1 (.github: Bump the github-actions group with 2 updates)
         if: failure()
         with:
            name: fail-${{matrix.config}}
@@ -288,11 +276,7 @@ jobs:
            retention-days: 14
 
       - name: Archive .bin artifacts
-<<<<<<< HEAD
         uses: actions/upload-artifact@v6
-=======
-        uses: actions/upload-artifact@v6
->>>>>>> 986c492ee1 (.github: Bump the github-actions group with 2 updates)
         with:
            name: BIN-${{matrix.config}}
            path: /__w/ardupilot/ardupilot/logs
