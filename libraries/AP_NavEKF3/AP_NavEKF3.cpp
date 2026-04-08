@@ -1224,11 +1224,27 @@ bool NavEKF3::getAirSpdVec(Vector3f &vel) const
     return false;
 }
 
-// return the innovation in m/s, innovation variance in (m/s)^2 and age in msec of the last TAS measurement processed
-bool NavEKF3::getAirSpdHealthData(float &innovation, float &innovationVariance, uint32_t &age_ms) const
+// return the innovation in m/s, innovation variance in (m/s)^2 and age in msec of the last TAS measurement
+// processed for the given airspeed sensor index. Checks the primary core first; if it is not fusing the
+// requested sensor, falls back to scanning the remaining cores. Returns false if no core is currently
+// fusing that sensor or if the data is unavailable.
+bool NavEKF3::getAirSpdHealthData(uint8_t airspeed_index, float &innovation, float &innovationVariance, uint32_t &age_ms) const
 {
-    if (core) {
-        return core[primary].getAirSpdHealthData(innovation, innovationVariance, age_ms);
+    if (core == nullptr) {
+        return false;
+    }
+    // try the primary core first
+    if (core[primary].getAirSpdHealthData(airspeed_index, innovation, innovationVariance, age_ms)) {
+        return true;
+    }
+    // primary isn't fusing this sensor; scan the remaining cores
+    for (uint8_t i = 0; i < num_cores; i++) {
+        if (i == primary) {
+            continue;
+        }
+        if (core[i].getAirSpdHealthData(airspeed_index, innovation, innovationVariance, age_ms)) {
+            return true;
+        }
     }
     return false;
 }

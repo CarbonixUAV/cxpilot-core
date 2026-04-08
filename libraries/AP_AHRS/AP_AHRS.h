@@ -179,9 +179,10 @@ public:
     // returns false if estimate is unavailable
     bool airspeed_vector_true(Vector3f &vec) const;
 
-    // return the innovation in m/s, innovation variance in (m/s)^2 and age in msec of the last TAS measurement processed
-    // returns false if the data is unavailable
-    bool airspeed_health_data(float &innovation, float &innovationVariance, uint32_t &age_ms) const;
+    // return the innovation in m/s, innovation variance in (m/s)^2 and age in msec of the last TAS measurement
+    // processed for the given airspeed sensor index. Returns false if no EKF core is currently fusing that
+    // sensor or if the data is unavailable.
+    bool airspeed_health_data(uint8_t airspeed_index, float &innovation, float &innovationVariance, uint32_t &age_ms) const;
 
     // return true if a airspeed sensor is enabled
     bool airspeed_sensor_enabled(void) const {

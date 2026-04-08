@@ -1096,9 +1096,10 @@ bool AP_AHRS::_airspeed_vector_true(Vector3f &vec) const
     return false;
 }
 
-// return the innovation in m/s, innovation variance in (m/s)^2 and age in msec of the last TAS measurement processed
-// returns false if the data is unavailable
-bool AP_AHRS::airspeed_health_data(float &innovation, float &innovationVariance, uint32_t &age_ms) const
+// return the innovation in m/s, innovation variance in (m/s)^2 and age in msec of the last TAS measurement
+// processed for the given airspeed sensor index. Returns false if no EKF core is currently fusing that
+// sensor or if the data is unavailable.
+bool AP_AHRS::airspeed_health_data(uint8_t airspeed_index, float &innovation, float &innovationVariance, uint32_t &age_ms) const
 {
     switch (active_EKF_type()) {
 #if AP_AHRS_DCM_ENABLED
@@ -1112,7 +1113,7 @@ bool AP_AHRS::airspeed_health_data(float &innovation, float &innovationVariance,
 
 #if HAL_NAVEKF3_AVAILABLE
     case EKFType::THREE:
-        return EKF3.getAirSpdHealthData(innovation, innovationVariance, age_ms);
+        return EKF3.getAirSpdHealthData(airspeed_index, innovation, innovationVariance, age_ms);
 #endif
 
 #if AP_AHRS_SIM_ENABLED
