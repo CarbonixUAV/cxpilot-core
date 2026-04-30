@@ -29,6 +29,7 @@
 #include <AP_Vehicle/AP_Vehicle_Type.h>
 #include <AP_RCTelemetry/AP_CRSF_Telem.h>
 #include <AP_SerialManager/AP_SerialManager.h>
+#include <AP_Logger/AP_Logger.h>
 
 #define CRSF_SUBSET_RC_STARTING_CHANNEL_BITS        5
 #define CRSF_SUBSET_RC_STARTING_CHANNEL_MASK        0x1F
@@ -357,11 +358,24 @@ void AP_RCProtocol_CRSF::update(void)
         }
         uint32_t n = _uart->available();
         n = MIN(n, 255U);
+        // BITP layer 2 span 1: time the byte-drain (which includes any
+        // _process_byte() -> decode_crsf_packet() -> process_telemetry()
+        // path that fires when a complete frame arrives)
+        const uint32_t _bitp_drain_t0 = AP_HAL::micros();
         for (uint8_t i = 0; i < n; i++) {
             int16_t b = _uart->read();
             if (b >= 0) {
                 _process_byte(uint8_t(b));
             }
+        }
+        const uint32_t _bitp_drain_us = AP_HAL::micros() - _bitp_drain_t0;
+        if (_bitp_drain_us > 2000) {
+            AP::logger().Write("BITP",
+                "TimeUS,Layer,Span,Slot,Type,Bytes,Elapsed",
+                "QBBbBHI",
+                AP_HAL::micros64(),
+                (uint8_t)2, (uint8_t)1, (int8_t)-1,
+                (uint8_t)0, (uint16_t)n, _bitp_drain_us);
         }
     }
 
@@ -369,7 +383,18 @@ void AP_RCProtocol_CRSF::update(void)
     uint32_t now = AP_HAL::micros();
     if (_last_frame_time_us > 0 && (!get_rc_input_count() || !is_tx_active())
         && now - _last_frame_time_us > CRSF_INTER_FRAME_TIME_US_250HZ) {
+        // BITP layer 2 span 2: time the 250Hz fallback process_telemetry path
+        const uint32_t _bitp_fb_t0 = AP_HAL::micros();
         process_telemetry(false);
+        const uint32_t _bitp_fb_us = AP_HAL::micros() - _bitp_fb_t0;
+        if (_bitp_fb_us > 2000) {
+            AP::logger().Write("BITP",
+                "TimeUS,Layer,Span,Slot,Type,Bytes,Elapsed",
+                "QBBbBHI",
+                AP_HAL::micros64(),
+                (uint8_t)2, (uint8_t)2, (int8_t)-1,
+                (uint8_t)0, (uint16_t)0, _bitp_fb_us);
+        }
         _last_frame_time_us = now;
     }
 
@@ -562,7 +587,20 @@ bool AP_RCProtocol_CRSF::process_telemetry(bool check_constraint)
 
     if (!telem_available) {
 #if HAL_CRSF_TELEM_ENABLED
-        if (AP_CRSF_Telem::get_telem_data(&_telemetry_frame, is_tx_active())) {
+        // BITP layer 3 span 1: time the per-frame builder (run_wfq_scheduler -> process_packet -> calc_*)
+        const uint32_t _bitp_get_t0 = AP_HAL::micros();
+        const bool _bitp_got = AP_CRSF_Telem::get_telem_data(&_telemetry_frame, is_tx_active());
+        const uint32_t _bitp_get_us = AP_HAL::micros() - _bitp_get_t0;
+        if (_bitp_get_us > 2000) {
+            AP::logger().Write("BITP",
+                "TimeUS,Layer,Span,Slot,Type,Bytes,Elapsed",
+                "QBBbBHI",
+                AP_HAL::micros64(),
+                (uint8_t)3, (uint8_t)1, (int8_t)-1,
+                (uint8_t)(_bitp_got ? _telemetry_frame.type : 0),
+                (uint16_t)0, _bitp_get_us);
+        }
+        if (_bitp_got) {
             telem_available = true;
         } else {
             return false;
@@ -571,7 +609,20 @@ bool AP_RCProtocol_CRSF::process_telemetry(bool check_constraint)
         return false;
 #endif
     }
+    // BITP layer 3 span 2: time the UART write+flush of the assembled frame
+    const uint32_t _bitp_wr_t0 = AP_HAL::micros();
+    const uint8_t _bitp_wr_type = _telemetry_frame.type;
+    const uint16_t _bitp_wr_bytes = (uint16_t)_telemetry_frame.length + 2;
     write_frame(&_telemetry_frame);
+    const uint32_t _bitp_wr_us = AP_HAL::micros() - _bitp_wr_t0;
+    if (_bitp_wr_us > 2000) {
+        AP::logger().Write("BITP",
+            "TimeUS,Layer,Span,Slot,Type,Bytes,Elapsed",
+            "QBBbBHI",
+            AP_HAL::micros64(),
+            (uint8_t)3, (uint8_t)2, (int8_t)-1,
+            _bitp_wr_type, _bitp_wr_bytes, _bitp_wr_us);
+    }
     // get fresh telem_data in the next call
     telem_available = false;
 

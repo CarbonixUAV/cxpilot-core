@@ -21,6 +21,8 @@
 
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Common/AP_FWVersion.h>
+#include <AP_HAL/AP_HAL.h>
+#include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
 #include <stdio.h>
 #include <math.h>
@@ -89,6 +91,10 @@ void AP_RCTelemetry::update_avg_packet_rate()
  */
 uint8_t AP_RCTelemetry::run_wfq_scheduler(const bool use_shaper)
 {
+    // BITP layer 4 span 1: time the per-call prep work
+    // (avg/max rate, sensor flags, ekf status, statustext semaphore)
+    const uint32_t _bitp_prep_t0 = AP_HAL::micros();
+
     update_avg_packet_rate();
     update_max_packet_rate();
 
@@ -113,6 +119,18 @@ uint8_t AP_RCTelemetry::run_wfq_scheduler(const bool use_shaper)
 
     adjust_packet_weight(queue_empty);
 
+    const uint32_t _bitp_prep_us = AP_HAL::micros() - _bitp_prep_t0;
+    if (_bitp_prep_us > 2000) {
+        AP::logger().Write("BITP",
+            "TimeUS,Layer,Span,Slot,Type,Bytes,Elapsed",
+            "QBBbBHI",
+            AP_HAL::micros64(),
+            (uint8_t)4, (uint8_t)1, (int8_t)-1,
+            (uint8_t)0, (uint16_t)0, _bitp_prep_us);
+    }
+
+    // BITP layer 4 span 2: time the slot-pick loop
+    const uint32_t _bitp_pick_t0 = AP_HAL::micros();
     // search the packet with the longest delay after the scheduled time
     for (int i=0; i<_time_slots; i++) {
         // normalize packet delay relative to packet weight
@@ -129,6 +147,16 @@ uint8_t AP_RCTelemetry::run_wfq_scheduler(const bool use_shaper)
             }
         }
     }
+    const uint32_t _bitp_pick_us = AP_HAL::micros() - _bitp_pick_t0;
+    if (_bitp_pick_us > 2000) {
+        AP::logger().Write("BITP",
+            "TimeUS,Layer,Span,Slot,Type,Bytes,Elapsed",
+            "QBBbBHI",
+            AP_HAL::micros64(),
+            (uint8_t)4, (uint8_t)2, (int8_t)max_delay_idx,
+            (uint8_t)0, (uint16_t)_time_slots, _bitp_pick_us);
+    }
+
     if (max_delay_idx < 0) {  // nothing was ready
         return max_delay_idx;
     }
@@ -139,8 +167,20 @@ uint8_t AP_RCTelemetry::run_wfq_scheduler(const bool use_shaper)
 #endif
     _scheduler.packet_timer[max_delay_idx] = now;
     //debug("process_packet(%d): %f", max_delay_idx, max_delay);
-    // send packet
+    // BITP layer 4 span 3: time the actual frame builder call
+    // (calc_battery / calc_attitude / calc_baro_vario / calc_vario / calc_gps / ...)
+    // tagged with max_delay_idx so we can read off which scheduler slot was running
+    const uint32_t _bitp_pp_t0 = AP_HAL::micros();
     process_packet(max_delay_idx);
+    const uint32_t _bitp_pp_us = AP_HAL::micros() - _bitp_pp_t0;
+    if (_bitp_pp_us > 2000) {
+        AP::logger().Write("BITP",
+            "TimeUS,Layer,Span,Slot,Type,Bytes,Elapsed",
+            "QBBbBHI",
+            AP_HAL::micros64(),
+            (uint8_t)4, (uint8_t)3, (int8_t)max_delay_idx,
+            (uint8_t)0, (uint16_t)0, _bitp_pp_us);
+    }
     // let the caller know which packet type was sent
     return max_delay_idx;
 }

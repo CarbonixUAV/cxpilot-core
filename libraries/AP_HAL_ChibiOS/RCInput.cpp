@@ -30,6 +30,7 @@ extern AP_IOMCU iomcu;
 #endif
 
 #include <AP_Math/AP_Math.h>
+#include <AP_Logger/AP_Logger.h>
 
 #ifndef HAL_NO_UARTDRIVER
 #include <GCS_MAVLink/GCS.h>
@@ -129,6 +130,8 @@ void RCInput::_timer_tick(void)
     if (!_init) {
         return;
     }
+    // BITP layer 1: time the whole rcin tick
+    const uint32_t _bitp_t0 = AP_HAL::micros();
 #ifndef HAL_NO_UARTDRIVER
     const char *rc_protocol = nullptr;
     RCSource source = last_source;
@@ -211,6 +214,17 @@ void RCInput::_timer_tick(void)
 
     // note, we rely on the vehicle code checking new_input()
     // and a timeout for the last valid input to handle failsafe
+
+    // BITP layer 1: log if rcin tick exceeded 2ms
+    const uint32_t _bitp_elapsed = AP_HAL::micros() - _bitp_t0;
+    if (_bitp_elapsed > 2000) {
+        AP::logger().Write("BITP",
+            "TimeUS,Layer,Span,Slot,Type,Bytes,Elapsed",
+            "QBBbBHI",
+            AP_HAL::micros64(),
+            (uint8_t)1, (uint8_t)0, (int8_t)-1,
+            (uint8_t)0, (uint16_t)0, _bitp_elapsed);
+    }
 }
 
 /*
