@@ -75,6 +75,12 @@ public:
     // request information on running threads
     void thread_info(ExpandingString &str) override;
 #endif
+#if HAL_ENABLE_THREAD_STATISTICS
+    // BIT debug: walk the thread registry and emit one THRT log row per
+    // running thread, with worst single-run time and cumulative run time
+    // since the previous call. Resets per-window stats on each call.
+    static void log_thread_runtime();
+#endif
 #if CH_CFG_USE_SEMAPHORES
     // request information on dma contention
     void dma_info(ExpandingString &str) override;

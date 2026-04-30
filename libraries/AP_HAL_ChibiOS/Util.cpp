@@ -458,6 +458,74 @@ __RAMFUNC__ void Util::thread_info(ExpandingString &str)
 }
 #endif // CH_DBG_ENABLE_STACK_CHECK == TRUE
 
+#if HAL_ENABLE_THREAD_STATISTICS && HAL_LOGGING_ENABLED
+// BIT debug: walk the thread registry and emit one THRT log row per
+// running thread, capturing worst single-run time, cumulative run time,
+// and run count (n) since the previous call. Resets per-window fields
+// so the next snapshot reports just the new window. Also emits one synthetic
+// row for ISR critical-section time (Name="ISR", Pri=255).
+//
+// Reset rule: only zero worst/cumulative/n. Never touch tp->stats.last —
+// it doubles as the in-progress measurement start timestamp; zeroing it on
+// a thread that's currently scheduled would make the next stop-measurement
+// compute (current_rtc - 0) and inject millions of bogus ticks into cumulative.
+//
+// Worst and Cumul are logged as raw DWT cycle counts (port_rt_get_counter_value()
+// returns DWT->CYCCNT on Cortex-M7). Convert offline using the CPU clock —
+// for STM32H7 / CubeOrangePlus this is STM32_SYS_D1CPRE_CK ≈ 480 MHz, so
+// us = ticks / 480.
+void Util::log_thread_runtime()
+{
+    const uint64_t time_us = AP_HAL::micros64();
+
+    // Synthetic "ISR" row for kernel critical-section ISR accounting
+    {
+        const uint32_t isr_worst = (uint32_t)currcore->kernel_stats.m_crit_isr.worst;
+        const uint64_t isr_cumul = (uint64_t)currcore->kernel_stats.m_crit_isr.cumulative;
+        const uint16_t isr_n = (uint16_t)MIN((uint64_t)currcore->kernel_stats.m_crit_isr.n,
+                                             (uint64_t)65535U);
+        // Same safety rule: don't touch .last
+        currcore->kernel_stats.m_crit_isr.worst = 0U;
+        currcore->kernel_stats.m_crit_isr.cumulative = 0U;
+        currcore->kernel_stats.m_crit_isr.n = 0U;
+        AP::logger().Write("THRT",
+                           "TimeUS,Name,Pri,WorstTk,CumulTk,N",
+                           "QNBIQH",
+                           time_us,
+                           "ISR",
+                           uint8_t(255),
+                           isr_worst,
+                           isr_cumul,
+                           isr_n);
+    }
+
+    for (thread_t *tp = chRegFirstThread(); tp; tp = chRegNextThread(tp)) {
+        if (tp->stats.best == 0) {
+            // never run; skip
+            continue;
+        }
+        char thdname[17] {};
+        strncpy(thdname, tp->name, sizeof(thdname)-1);
+        const uint32_t worst = (uint32_t)tp->stats.worst;
+        const uint64_t cumul = (uint64_t)tp->stats.cumulative;
+        const uint16_t n = (uint16_t)MIN((uint64_t)tp->stats.n, (uint64_t)65535U);
+        // Per-window reset (safe — does NOT touch .last, see comment above).
+        tp->stats.worst = 0U;
+        tp->stats.cumulative = 0U;
+        tp->stats.n = 0U;
+        AP::logger().Write("THRT",
+                           "TimeUS,Name,Pri,WorstTk,CumulTk,N",
+                           "QNBIQH",
+                           time_us,
+                           thdname,
+                           uint8_t(tp->realprio),
+                           worst,
+                           cumul,
+                           n);
+    }
+}
+#endif // HAL_ENABLE_THREAD_STATISTICS && HAL_LOGGING_ENABLED
+
 #if CH_CFG_USE_SEMAPHORES
 // request information on dma contention
 void Util::dma_info(ExpandingString &str)

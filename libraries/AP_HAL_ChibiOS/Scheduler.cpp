@@ -526,9 +526,21 @@ void Scheduler::_rcin_thread(void *arg)
     while (!sched->_hal_initialized) {
         sched->delay_microseconds(20000);
     }
+#if HAL_ENABLE_THREAD_STATISTICS && HAL_LOGGING_ENABLED
+    uint32_t last_thrt_ms = 0;
+#endif
     while (true) {
         sched->delay_microseconds(1000);
         ((RCInput *)hal.rcin)->_timer_tick();
+#if HAL_ENABLE_THREAD_STATISTICS && HAL_LOGGING_ENABLED
+        // BIT debug: snapshot per-thread runtime stats every 50ms so we can
+        // attribute Lua-iter preemption gaps to a specific thread.
+        const uint32_t now_ms = AP_HAL::millis();
+        if (now_ms - last_thrt_ms >= 50) {
+            last_thrt_ms = now_ms;
+            Util::log_thread_runtime();
+        }
+#endif
     }
 }
 
