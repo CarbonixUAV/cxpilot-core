@@ -682,6 +682,21 @@ void AP_RCProtocol_CRSF::process_link_stats_frame(const void* data)
     const uint8_t max_modes = (RFMode::RF_MODE_MAX_MODES - RFMode::CRSF_RF_MAX_MODES) - 1U; // Subtract 1 due to zero-indexing
     _link_status.rf_mode = MIN(link->rf_mode, max_modes); // Cap to avoid memory spills in the conversion tables
 
+    // BIT debug: log raw rf_mode + link statistics on every LINK_STATISTICS
+    // frame. RawMode is the unmasked byte from the TX/RX before any clamping;
+    // LQ is the uplink_status field (0-100); RSSI is the dBm from the
+    // currently-active antenna. Pair this with CRFM to spot rf_mode reports
+    // that don't match the actual measured RX rate.
+    AP::logger().Write("CRLM",
+                       "TimeUS,RawMode,Capped,LQ,RSSI,Ant",
+                       "QBBBBB",
+                       AP_HAL::micros64(),
+                       (uint8_t)link->rf_mode,
+                       (uint8_t)_link_status.rf_mode,
+                       (uint8_t)link->uplink_status,
+                       rssi_dbm,
+                       (uint8_t)link->active_antenna);
+
 #if AP_OSD_LINK_STATS_EXTENSIONS_ENABLED
     // Populate the extra data items
     if (link->uplink_status > 0) {
