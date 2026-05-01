@@ -412,6 +412,14 @@ void AP_RCProtocol_CRSF::write_frame(Frame* frame)
     if (!uart) {
         return;
     }
+    // BIT debug: log every CRSF frame written. Direction=1 (TX). Type and Len
+    // identify the frame; payload not logged.
+    AP::logger().Write("CRFM", "TimeUS,Dir,Type,Len",
+                       "QBBB",
+                       AP_HAL::micros64(),
+                       (uint8_t)1,
+                       (uint8_t)frame->type,
+                       (uint8_t)frame->length);
     // calculate crc
     uint8_t crc = crc8_dvb_s2(0, frame->type);
     for (uint8_t i = 0; i < frame->length - 2; i++) {
@@ -442,6 +450,15 @@ void AP_RCProtocol_CRSF::write_frame(Frame* frame)
 
 bool AP_RCProtocol_CRSF::decode_crsf_packet()
 {
+    // BIT debug: log every CRSF frame received (CRC has already passed by the
+    // time we get here). Direction=0 (RX). Type and Len identify the frame;
+    // payload not logged.
+    AP::logger().Write("CRFM", "TimeUS,Dir,Type,Len",
+                       "QBBB",
+                       AP_HAL::micros64(),
+                       (uint8_t)0,
+                       (uint8_t)_frame.type,
+                       (uint8_t)_frame.length);
 #ifdef CRSF_DEBUG
     hal.console->printf("CRSF: received %s:", get_frame_type(_frame.type));
     uint8_t* fptr = (uint8_t*)&_frame;
