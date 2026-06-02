@@ -309,6 +309,8 @@ void AP_EFI_Serial_Hirth::decode_data()
         internal_state.ignition_voltage = record1->battery_voltage * VOLTAGE_RESOLUTION;
 
         sensor_status = record1->sensor_ok;
+        number_rpm_error = record1->number_of_speed_errors;
+        number_interfere_pulse = record1->number_of_interfering_pulses;
 
         // resusing mavlink variables as required for Hirth
         // add in ADC voltage of MAP sensor > convert to MAP in kPa
@@ -333,6 +335,10 @@ void AP_EFI_Serial_Hirth::decode_data()
         last_fuel_integration_ms = now;
 
         internal_state.throttle_position_percent = record2->throttle_percent_times_10 * 0.1;
+        engine_total_time = record2->total_time_in_26ms * 0.026f;
+        total_rotations = record2->total_number_of_rotations;
+        number_error_in_error_memory = record2->number_of_errors_in_error_memory;
+
         break;
     }
 
@@ -341,6 +347,7 @@ void AP_EFI_Serial_Hirth::decode_data()
 
         // EFI3 Log
         error_excess_temperature = record3->error_excess_temperature_bitfield;
+        temp_crankshaft_housing = record3->temperature_crankshaft_housing;
 
         // ECYL log
         internal_state.cylinder_status.cylinder_head_temperature = C_TO_KELVIN(record3->excess_temperature_1);
@@ -364,18 +371,25 @@ void AP_EFI_Serial_Hirth::log_status(void)
     // @Field: TimeUS: Time since system startup
     // @Field: EET: Error Excess Temperature Bitfield
     // @FieldBitmaskEnum: EET: AP_EFI_Serial_Hirth:::Error_Excess_Temp_Bitfield
-    // @Field: FLAG: Sensor Status Bitfield
-    // @FieldBitmaskEnum: FLAG: AP_EFI_Serial_Hirth:::Sensor_Status_Bitfield
+    // @Field: FLG: Sensor Status Bitfield
+    // @FieldBitmaskEnum: FLG: AP_EFI_Serial_Hirth:::Sensor_Status_Bitfield
     // @Field: CRF: CRC failure count
     // @Field: AKF: ACK failure count
     // @Field: Up: Uptime between 2 messages
     // @Field: ThO: Throttle output as received by the engine
     // @Field: ThM: Modified throttle_to_hirth output sent to the engine
+    // @Field: RPE: RPM error count
+    // @Field: EVLT: ECU power supply voltage
+    // @Field: ETim: Total engine runtime in seconds
+    // @Field: InP: Interfering pulse count
+    // @Field: Mem: Number of error in error memory
+    // @Field: CrT: Temperature of crankshaft housing
+    // @Field: NRot: Total number of engine rotations
     AP::logger().WriteStreaming("EFIS",
-                                "TimeUS,EET,FLAG,CRF,AKF,Up,ThO,ThM",
-                                "s-------",
-                                "F-------",
-                                "QHBIIIfH",
+                                "TimeUS,EET,FLG,CRF,AKF,Up,ThO,ThM,RPE,EVLT,ETim,InP,Mem,CrT,NRot",
+                                "s--------vs--O-",
+                                "F--------00--00",
+                                "QHBIIIfHHffHHfI",
                                 AP_HAL::micros64(),
                                 uint16_t(error_excess_temperature),
                                 uint8_t(sensor_status),
@@ -383,7 +397,14 @@ void AP_EFI_Serial_Hirth::log_status(void)
                                 uint32_t(ack_fail_cnt),
                                 uint32_t(uptime),
                                 float(internal_state.throttle_out),
-                                uint16_t(throttle_to_hirth));
+                                uint16_t(throttle_to_hirth),
+                                uint16_t(number_rpm_error),
+                                float(internal_state.ignition_voltage),
+                                float(engine_total_time),
+                                uint16_t(number_interfere_pulse),
+                                uint16_t(number_error_in_error_memory),
+                                float(temp_crankshaft_housing),
+                                uint32_t(total_rotations));
 }
 #endif // HAL_LOGGING_ENABLED
 
