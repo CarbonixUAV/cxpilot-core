@@ -95,7 +95,12 @@ private:
     uint32_t crc_fail_cnt;
     uint32_t uptime;
     uint32_t ack_fail_cnt;
-
+    uint16_t number_rpm_error;
+    float engine_total_time;
+    uint32_t total_rotations;
+    uint16_t number_interfere_pulse;
+    uint16_t number_error_in_error_memory;
+    int16_t temp_crankshaft_housing;
     struct PACKED Record1 {
         uint8_t reserved1[2];
         uint16_t save_in_flash;  // "1 = data are saved in flash automatically"
