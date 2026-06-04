@@ -101,6 +101,7 @@ private:
     uint16_t number_interfere_pulse;
     uint16_t number_error_in_error_memory;
     int16_t temp_crankshaft_housing;
+    uint16_t engine_stop;
     struct PACKED Record1 {
         uint8_t reserved1[2];
         uint16_t save_in_flash;  // "1 = data are saved in flash automatically"
@@ -116,7 +117,7 @@ private:
         uint16_t reserved5;
         uint16_t voltage_throttle;
         uint16_t reserved6;
-        uint8_t reserved7[2];
+        uint16_t voltage_engine_stop;
         uint16_t voltage_engine_temperature;
         uint16_t voltage_air_temperature;
         uint8_t reserved8[2];
