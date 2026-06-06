@@ -6321,7 +6321,7 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
 
         self.wait_current_waypoint(4)
 
-        self.set_parameter('SIM_SPEEDUP', 1)
+        self.context_set_speedup(1)
 
         self.mavproxy.interact()
 
