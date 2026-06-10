@@ -156,7 +156,7 @@ jobs:
             build-options-defaults-test,
             signing,
             CubeOrange-PPP,
-            CubeRed-EKF2,
+            # CubeRed-EKF2, # (removed: too close to overflow on 4.6)
             SOHW,
             Pixhawk6X-PPPGW,
             new-check,
