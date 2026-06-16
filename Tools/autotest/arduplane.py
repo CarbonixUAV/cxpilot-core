@@ -6197,6 +6197,47 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
 
         self.fly_home_land_and_disarm()
 
+    def ReturnPathStartNoLocation(self):
+        '''DO_RETURN_PATH_START RTL still rejoins with location-less markers'''
+        # RTL_AUTOLAND=4 rejoins the mission at the closest DO_RETURN_PATH_START
+        # leg (mission.jump_to_closest_mission_leg()).  The leg search runs from
+        # the DRPS to the DO_LAND_START; when both markers are location-less and
+        # nothing lies between them the search resolves no points and RTL would
+        # silently fail to autoland.  Cover all four marker-location
+        # combos; the (0, 0) case is the regression.
+        self.set_parameters({
+            "RTL_AUTOLAND": 4,
+        })
+
+        DRPS = mavutil.mavlink.MAV_CMD_DO_RETURN_PATH_START
+        DLS = mavutil.mavlink.MAV_CMD_DO_LAND_START
+        WP = mavutil.mavlink.MAV_CMD_NAV_WAYPOINT
+        wp_after_dls = 4   # home(0) WP(1) DRPS(2) DLS(3) WP(4) WP(5)
+
+        self.takeoff(alt=80, mode='TAKEOFF')
+
+        # north offset (metres from home) for each marker; 0 => a bare 0,0 marker
+        for (drps_n, dls_n) in [(0, 0), (700, 0), (0, 700), (700, 750)]:
+            self.start_subtest("DRPS n=%u, DLS n=%u" % (drps_n, dls_n))
+            self.upload_simple_relhome_mission([
+                (WP, 1500, 0, 80),     # 1: somewhere to be while not in RTL
+                (DRPS, drps_n, 0, 0),  # 2
+                (DLS, dls_n, 0, 0),    # 3
+                (WP, 300, 0, 60),      # 4: waypoint after the DLS (rejoin target)
+                (WP, 100, 0, 60),      # 5: trailing waypoint
+            ])
+            # stage the mission without running it, then command an RTL
+            self.change_mode('GUIDED')
+            self.run_cmd(mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH)
+            # RTL_AUTOLAND=4 immediately force-resumes AUTO at the rejoin leg; the
+            # marker-location fallback is what lets the 0,0 combos resolve a leg.
+            # Without the fix the (0, 0) combo never leaves RTL and this times out.
+            self.wait_mode('AUTO')
+            self.wait_current_waypoint(wp_after_dls, timeout=60)
+            self.change_mode('GUIDED')  # halt before staging the next combo
+
+        self.fly_home_land_and_disarm()
+
     def MAV_CMD_NAV_ALTITUDE_WAIT(self):
         '''test MAV_CMD_NAV_ALTITUDE_WAIT mission item, wiggling only'''
 
@@ -7157,6 +7198,7 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
             self.MAV_CMD_DO_GO_AROUND,
             self.MAV_CMD_DO_FLIGHTTERMINATION,
             self.MAV_CMD_DO_LAND_START,
+            self.ReturnPathStartNoLocation,
             self.MAV_CMD_NAV_ALTITUDE_WAIT,
             self.InteractTest,
             self.MAV_CMD_MISSION_START,
