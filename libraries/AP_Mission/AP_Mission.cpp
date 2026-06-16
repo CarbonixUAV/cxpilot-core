@@ -2677,6 +2677,14 @@ bool AP_Mission::distance_to_mission_leg(uint16_t start_index, uint16_t &search_
         }
         index = temp_cmd.index + 1;
 
+        // marker does not have a valid location, use the next nav command's
+        if (temp_cmd.id == MAV_CMD_DO_RETURN_PATH_START && !temp_cmd.content.location.initialised()) {
+            Mission_Command next_nav;
+            if (get_next_nav_cmd(temp_cmd.index, next_nav)) {
+                temp_cmd.content.location = next_nav.content.location;
+            }
+        }
+
         if (stored_in_location(temp_cmd.id) && temp_cmd.content.location.initialised()) {
             if (prev_loc.lat == 0 && prev_loc.lng == 0) {
                 // Need a valid previous location to do distance to leg calculation
