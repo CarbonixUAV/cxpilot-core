@@ -278,10 +278,10 @@ void SIMState::_simulator_servos(struct sitl_input &input)
     // output at chosen framerate
     uint32_t now = AP_HAL::micros();
 
-    // find the barometer object if it exists
-    const auto *_barometer = AP_Baro::get_singleton();
-
-    float altitude = _barometer?_barometer->get_altitude():0;
+    // DROP this commit in CxPilot-9
+    // Wind should scale with AGL altitude, not relative-to-home. This was fixed
+    // upstream (30902) for 4.7, but was wrapped in a more complex refactor.
+    float altitude = _sitl?_sitl->state.height_agl:0;
     float wind_speed = 0;
     float wind_direction = 0;
     float wind_dir_z = 0;
