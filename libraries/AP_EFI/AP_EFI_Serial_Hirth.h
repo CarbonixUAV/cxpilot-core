@@ -150,7 +150,7 @@ private:
         int16_t ignition_angle_from_engine_temperature_characteristic_curve;
         int16_t ignition_angle_from_acceleration;
         int16_t ignition_angle_from_race_switch;
-        uint32_t total_time_in_26ms;
+        uint32_t total_time_in_100ms;       // Hirth manual states 26ms interval when it should be 100ms interval
         uint32_t total_number_of_rotations;
         uint16_t fuel_consumption;
         uint16_t number_of_errors_in_error_memory;

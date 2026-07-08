@@ -336,7 +336,7 @@ void AP_EFI_Serial_Hirth::decode_data()
         last_fuel_integration_ms = now;
 
         internal_state.throttle_position_percent = record2->throttle_percent_times_10 * 0.1;
-        engine_total_time = record2->total_time_in_26ms * 0.026f;
+        engine_total_time = record2->total_time_in_100ms * 0.1f;
         total_rotations = record2->total_number_of_rotations;
         number_error_in_error_memory = record2->number_of_errors_in_error_memory;
 
