@@ -39,6 +39,9 @@ public:
 #if AP_AIRSPEED_AUTOCAL_ENABLE
     AP_Int8  autocal;
 #endif
+#if AP_AIRSPEED_DRONECAN_ENABLED && !defined(HAL_BUILD_AP_PERIPH)
+    AP_Int32 override_node_id;   // pin a DroneCAN node id to this instance, 0 = auto
+#endif
 
     static const struct AP_Param::GroupInfo var_info[];
 };
@@ -200,7 +203,13 @@ public:
 
     // get number of sensors
     uint8_t get_num_sensors(void) const { return num_sensors; }
-    
+
+#if AP_AIRSPEED_DRONECAN_ENABLED
+    // return the DroneCAN node id pinned to an instance, 0 if none. Used by
+    // the DroneCAN backend probe to assign a specific node to an instance.
+    int32_t get_can_override_node_id(uint8_t i) const;
+#endif
+
     static AP_Airspeed *get_singleton() { return _singleton; }
 
     // return the current corrected pressure, public for AP_Periph

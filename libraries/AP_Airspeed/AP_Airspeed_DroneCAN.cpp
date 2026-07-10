@@ -36,8 +36,32 @@ AP_Airspeed_Backend* AP_Airspeed_DroneCAN::probe(AP_Airspeed &_frontend, uint8_t
 
     AP_Airspeed_DroneCAN* backend = nullptr;
 
+    // node id pinned to this instance (0 = auto)
+    const int32_t override_node_id = _frontend.get_can_override_node_id(_instance);
+
     for (uint8_t i = 0; i < AIRSPEED_MAX_SENSORS; i++) {
         if (_detected_modules[i].driver == nullptr && _detected_modules[i].ap_dronecan != nullptr) {
+            const uint8_t node_id = _detected_modules[i].node_id;
+
+            if (override_node_id != 0) {
+                // this instance is pinned to a specific node; skip anything else
+                if (override_node_id != node_id) {
+                    continue;
+                }
+            } else {
+                // this instance is auto; don't steal a node another instance has pinned
+                bool reserved = false;
+                for (uint8_t j = 0; j < AIRSPEED_MAX_SENSORS; j++) {
+                    if (j != _instance && _frontend.get_can_override_node_id(j) == node_id) {
+                        reserved = true;
+                        break;
+                    }
+                }
+                if (reserved) {
+                    continue;
+                }
+            }
+
             const auto bus_id = AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_UAVCAN,
                                                             _detected_modules[i].ap_dronecan->get_driver_index(),
                                                             _detected_modules[i].node_id, 0);

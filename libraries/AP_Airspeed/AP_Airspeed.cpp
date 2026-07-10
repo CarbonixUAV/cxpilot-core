@@ -913,6 +913,18 @@ float AP_Airspeed::get_differential_pressure(uint8_t i) const {
     return state[i].last_pressure;
 }
 
+#if AP_AIRSPEED_DRONECAN_ENABLED
+// return the DroneCAN node id pinned to an instance, 0 if none
+int32_t AP_Airspeed::get_can_override_node_id(uint8_t i) const {
+#ifndef HAL_BUILD_AP_PERIPH
+    if (i < AIRSPEED_MAX_SENSORS) {
+        return param[i].override_node_id.get();
+    }
+#endif
+    return 0;
+}
+#endif // AP_AIRSPEED_DRONECAN_ENABLED
+
 // return the current corrected pressure
 float AP_Airspeed::get_corrected_pressure(uint8_t i) const {
     if (!enabled(i)) {

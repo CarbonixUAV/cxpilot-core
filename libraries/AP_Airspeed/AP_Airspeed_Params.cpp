@@ -130,6 +130,15 @@ const AP_Param::GroupInfo AP_Airspeed_Params::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO_FLAGS("DEVID", 11, AP_Airspeed_Params, bus_id, 0, AP_PARAM_FLAG_INTERNAL_USE_ONLY),
 
+#if AP_AIRSPEED_DRONECAN_ENABLED && !defined(HAL_BUILD_AP_PERIPH)
+    // @Param: CAN_NODE
+    // @DisplayName: DroneCAN airspeed node id
+    // @Description: If non-zero, the DroneCAN airspeed sensor with this node id is assigned to this instance. If zero the sensor is selected on a first-come-first-served basis. Use this to keep a specific physical sensor pinned to a specific airspeed instance.
+    // @Range: 0 127
+    // @User: Advanced
+    AP_GROUPINFO("CAN_NODE", 12, AP_Airspeed_Params, override_node_id, 0),
+#endif
+
     AP_GROUPEND
 };
 
