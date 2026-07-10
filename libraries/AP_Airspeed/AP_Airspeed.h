@@ -26,6 +26,7 @@ public:
 #ifndef HAL_BUILD_AP_PERIPH
     AP_Float offset;
     AP_Float ratio;
+    AP_Float pos_y;         // lateral (body Y) mounting offset in metres, +Y = right of centreline
 #endif
     AP_Float psi_range;
 #ifndef HAL_BUILD_AP_PERIPH

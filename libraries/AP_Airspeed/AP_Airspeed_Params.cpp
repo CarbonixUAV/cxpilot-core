@@ -139,6 +139,17 @@ const AP_Param::GroupInfo AP_Airspeed_Params::var_info[] = {
     AP_GROUPINFO("CAN_NODE", 12, AP_Airspeed_Params, override_node_id, 0),
 #endif
 
+#ifndef HAL_BUILD_AP_PERIPH
+    // @Param: POS_Y
+    // @DisplayName: Airspeed sensor Y position offset
+    // @Description: Y position of the airspeed sensor in body frame. Positive Y is to the right of the vehicle, origin at the CG. When set, the reported airspeed is corrected for the tangential velocity a wing-mounted (off-centreline) pitot sees during yaw, referencing the reading back to the CG. Only the lateral (Y) lever arm is corrected; vertical offset and pitch-rate effects are deliberately ignored.
+    // @Units: m
+    // @Range: -5 5
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("POS_Y", 13, AP_Airspeed_Params, pos_y, 0),
+#endif
+
     AP_GROUPEND
 };
 

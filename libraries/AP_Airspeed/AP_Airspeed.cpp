@@ -54,6 +54,7 @@
 #include "AP_Airspeed_MSP.h"
 #include "AP_Airspeed_External.h"
 #include "AP_Airspeed_SITL.h"
+#include <AP_AHRS/AP_AHRS.h>
 extern const AP_HAL::HAL &hal;
 
 #include <AP_Vehicle/AP_FixedWing.h>
@@ -669,6 +670,25 @@ void AP_Airspeed::read(uint8_t i)
         state[i].raw_airspeed   = sqrtf(fabsf(airspeed_pressure) * param[i].ratio);
         state[i].airspeed       = sqrtf(fabsf(state[i].filtered_pressure) * param[i].ratio);
         break;
+    }
+
+    /*
+      correct for a laterally offset (e.g. wing-mounted) pitot. When the
+      aircraft yaws, a pitot mounted a distance pos_y off the centreline sees
+      an extra tangential velocity of -yaw_rate*pos_y along the body X axis, so
+      the advancing side reads high and the retreating side reads low. Add
+      yaw_rate*pos_y to reference the reading back to the CG. Only the lateral
+      lever arm is corrected; the pitch-rate/vertical-offset term is ignored.
+      yaw_rate is the notch+low-pass filtered, bias-corrected body rate that
+      also feeds the rate controller. The tangential velocity is a true
+      airspeed while the reported value is EAS, so divide by EAS2TAS (a cached
+      accessor, cheap at the 10Hz airspeed update).
+     */
+    const float pos_y = param[i].pos_y;
+    if (!is_zero(pos_y)) {
+        const float correction = (AP::ahrs().get_gyro().z * pos_y) / AP::ahrs().get_EAS2TAS();
+        state[i].raw_airspeed = MAX(state[i].raw_airspeed + correction, 0.0f);
+        state[i].airspeed     = MAX(state[i].airspeed + correction, 0.0f);
     }
 #endif // HAL_BUILD_AP_PERIPH
 }
