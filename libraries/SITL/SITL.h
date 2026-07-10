@@ -298,6 +298,7 @@ public:
         AP_Float fail_pitot_pressure; // pitot tube failure pressure in Pa
         AP_Float offset; // airspeed sensor offset in m/s
         AP_Float ratio; // airspeed ratios
+        AP_Float pos_y; // lateral (body Y) mounting offset in metres, +Y = right of centreline
         AP_Int8  signflip;
     };
     AirspeedParm airspeed[AIRSPEED_MAX_SENSORS];

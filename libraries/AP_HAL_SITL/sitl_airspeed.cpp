@@ -31,7 +31,11 @@ void SITL_State::_update_airspeed(float true_airspeed)
 {
     for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
         const auto &arspd = _sitl->airspeed[i];
-        float airspeed = true_airspeed / AP_Baro::get_EAS2TAS_for_alt_amsl(_sitl->state.altitude);
+        // model a laterally offset (e.g. wing-mounted) pitot: during yaw it sees
+        // an extra tangential velocity of -yaw_rate*pos_y along the body X axis.
+        // This is what ARSPDn_POS_Y corrects for, so a matching value cancels it.
+        const float pitot_tas = true_airspeed - radians(_sitl->state.yawRate) * arspd.pos_y;
+        float airspeed = pitot_tas / AP_Baro::get_EAS2TAS_for_alt_amsl(_sitl->state.altitude);
         const float diff_pressure = sq(airspeed) / arspd.ratio;
         float airspeed_raw;
     

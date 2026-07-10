@@ -37,6 +37,12 @@ const AP_Param::GroupInfo SIM::AirspeedParm::var_info[] = {
     // @Description: Simulated airspeed sensor ratio
     // @User: Advanced
     AP_GROUPINFO("RATIO",   7, AirspeedParm,  ratio, 1.99),
+    // @Param: POS_Y
+    // @DisplayName: Airspeed sensor Y position offset
+    // @Description: Simulated lateral (body Y) mounting offset of the pitot, +Y is to the right of the vehicle. The simulated reading gains the tangential velocity a pitot at this offset would see during yaw, so it can be cancelled by ARSPDn_POS_Y.
+    // @Units: m
+    // @User: Advanced
+    AP_GROUPINFO("POS_Y",   8, AirspeedParm,  pos_y, 0),
     AP_GROUPEND
 };
 }
