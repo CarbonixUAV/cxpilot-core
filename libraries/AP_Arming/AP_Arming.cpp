@@ -380,6 +380,21 @@ bool AP_Arming::airspeed_checks(bool report)
                 return false;
             }
         }
+#if AP_AIRSPEED_DRONECAN_ENABLED
+        // two instances must not be pinned to the same DroneCAN node id
+        for (uint8_t i=0; i<AIRSPEED_MAX_SENSORS; i++) {
+            const int32_t node_id = airspeed->get_can_override_node_id(i);
+            if (node_id == 0) {
+                continue;
+            }
+            for (uint8_t j=i+1; j<AIRSPEED_MAX_SENSORS; j++) {
+                if (airspeed->get_can_override_node_id(j) == node_id) {
+                    check_failed(ARMING_CHECK_AIRSPEED, report, "Same CAN node %d set for airspeed %d and %d", (int)node_id, i + 1, j + 1);
+                    return false;
+                }
+            }
+        }
+#endif  // AP_AIRSPEED_DRONECAN_ENABLED
     }
 
     return true;
