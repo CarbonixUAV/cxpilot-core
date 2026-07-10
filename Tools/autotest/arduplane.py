@@ -2851,6 +2851,93 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
             self.context_pop()
         self.reboot_sitl()
 
+    def AirspeedYawOffset(self):
+        '''ARSPDn_POS_Y cancels the yaw-rate airspeed error of an offset pitot'''
+        # Two SITL airspeed sensors read the same true airspeed:
+        #  - instance 0 (ARSPD):  clean reference, no offset
+        #  - instance 1 (ARSPD2): simulated lateral pitot offset (SIM_ARSPD2_POS_Y)
+        # Both are read from the per-instance AIRSPEED message. In a steady
+        # LOITER the yaw rate is a constant bias. The test runs in two phases so
+        # a regression can't hide:
+        #   Phase 1 (correction OFF): the simulated offset must appear as
+        #     inst0-inst1 ~= yaw_rate*offset, with the correct SIGN. This proves
+        #     the test is sensitive and pins the simulated offset to the
+        #     physics, so a no-op regression or a common-mode sign flip (which
+        #     would still cancel in phase 2) is caught here.
+        #   Phase 2 (correction ON): ARSPD2_POS_Y must cancel it (inst0-inst1
+        #     ~= 0); a firmware-only sign flip would instead double it.
+        OFFSET = 5.0
+        self.set_parameters({
+            "ARSPD_TYPE": 100,   "ARSPD_USE": 0,   "SIM_ARSPD_RND": 0,
+            "ARSPD_POS_Y": 0,    "SIM_ARSPD_POS_Y": 0,
+            "ARSPD2_TYPE": 100,  "ARSPD2_USE": 0,  "SIM_ARSPD2_RND": 0,
+            "SIM_ARSPD2_POS_Y": OFFSET,   # physical offset on sensor 2
+            "ARSPD2_POS_Y": 0,            # correction starts disabled (phase 1)
+            "WP_LOITER_RAD": 60,          # steady, healthy yaw rate
+        })
+        self.reboot_sitl()
+        self.wait_ready_to_arm()
+        self.arm_vehicle()
+        self.takeoff(alt=150)
+        self.change_mode("LOITER")
+        # request per-instance airspeed (round-robins the instances, so ask fast)
+        self.set_message_rate_hz(mavutil.mavlink.MAVLINK_MSG_ID_AIRSPEED, 20)
+        self.delay_sim_time(20)   # settle into a steady turn
+
+        def collect(duration):
+            latest = {0: None, 1: None}
+            diffs = []
+            yaws = []
+            tstart = self.get_sim_time_cached()
+            while self.get_sim_time_cached() - tstart < duration:
+                m = self.mav.recv_match(type=['AIRSPEED', 'ATTITUDE'],
+                                        blocking=True, timeout=5)
+                if m is None:
+                    continue
+                if m.get_type() == 'AIRSPEED':
+                    if m.id in latest:
+                        latest[m.id] = m.airspeed
+                    if latest[0] is not None and latest[1] is not None and latest[0] > 5:
+                        diffs.append(latest[0] - latest[1])
+                elif m.get_type() == 'ATTITUDE':
+                    yaws.append(m.yawspeed)
+            if len(diffs) < 10 or len(yaws) < 10:
+                raise NotAchievedException("insufficient AIRSPEED/ATTITUDE samples")
+            n = len(diffs)
+            mean = sum(diffs) / n
+            std = (sum((d - mean) ** 2 for d in diffs) / n) ** 0.5
+            yaw = sum(yaws) / len(yaws)
+            self.progress("inst0-inst1: mean=%.3f std=%.3f min=%.3f max=%.3f n=%u yaw=%.3f" %
+                          (mean, std, min(diffs), max(diffs), n, yaw))
+            return mean, std, yaw
+
+        # Phase 1: simulated offset in isolation (correction OFF) must show up
+        # with the right sign and magnitude.
+        self.progress("=== SIM offset ON, correction OFF (offset must appear) ===")
+        mean_off, std_off, yaw_off = collect(25)
+        if abs(yaw_off) < 0.1:
+            raise NotAchievedException("yaw rate too low to test: %.3f" % yaw_off)
+        expected = yaw_off * OFFSET   # signed; EAS2TAS ~1 at 150m
+        self.progress("uncorrected diff=%.3f expected~%.3f (std %.3f)" %
+                      (mean_off, expected, std_off))
+        if abs(mean_off) < 0.5 * abs(expected):
+            raise NotAchievedException(
+                "simulated offset not detected: diff=%.3f expected~%.3f" % (mean_off, expected))
+        if abs(mean_off - expected) > 0.3 * abs(expected) + 0.15:
+            raise NotAchievedException(
+                "simulated offset wrong sign/magnitude: diff=%.3f expected~%.3f" % (mean_off, expected))
+
+        # Phase 2: enable the correction, offset must be compensated away.
+        self.set_parameter("ARSPD2_POS_Y", OFFSET)
+        self.delay_sim_time(5)
+        self.progress("=== SIM offset ON, correction ON (must compensate) ===")
+        mean_on, std_on, _ = collect(25)
+        self.progress("compensated diff=%.3f (std %.3f)" % (mean_on, std_on))
+        if abs(mean_on) > 0.4:
+            raise NotAchievedException("POS_Y did not compensate: diff=%.3f" % mean_on)
+
+        self.fly_home_land_and_disarm()
+
     def TerrainMission(self):
         '''Test terrain following in mission'''
         self.install_terrain_handlers_context()
@@ -7144,6 +7231,7 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
             self.DeadreckoningNoAirSpeed,
             self.EKFlaneswitch,
             self.AirspeedDrivers,
+            self.AirspeedYawOffset,
             self.RTL_CLIMB_MIN,
             self.ClimbBeforeTurn,
             self.IMUTempCal,
