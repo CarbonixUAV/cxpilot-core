@@ -47,16 +47,53 @@ PC13 LED OUTPUT LOW GPIO(1)
 PA13 JTMS-SWDIO SWD
 PA14 JTCK-SWCLK SWD
 
+# PGOOD monitoring for 5V and 8V2 regulated rails (debug printout only, see
+# AP_Periph.cpp - no DroneCAN telemetry message yet). 3V3_PGOOD (PB6) is
+# skipped for now - conflicts with the dummy USART1_TX placeholder pin above.
+# VIN has no PGOOD net, it's the raw unregulated input.
+PA8 5V_PGOOD INPUT FLOATING GPIO(2)
+PB9 8V2_PGOOD INPUT FLOATING GPIO(3)
+
 define HAL_USE_ADC TRUE
 define STM32_ADC_USE_ADC1 TRUE
 
 # rail-voltage sense ADC inputs (resistor-divider scaled, see schematic
 # CX43040018 page 4 for R10/R16 (VIN), R11/R17 (8V2), R28/R32 (5V),
-# R29/R33 (3V3) - divider ratios feed BATT_VOLT_MULT params, not hwdef)
-PA0 8V2_ADC_IN ADC1 SCALE(1)
-PA1 VIN_ADC_IN ADC1 SCALE(1)
-PA2 5V_ADC_IN ADC1 SCALE(1)
-PA3 3V3_ADC_IN ADC1 SCALE(1)
+# R29/R33 (3V3)). NOTE: PA0 (pin 10) is not connected/DNP on this net -
+# the rail-sense nets actually start at PA1, confirmed 2026-08-05 against
+# real hardware behavior (VOLT_PIN=1 matched expected voltages, not 5-8).
+# ADC1 channel numbers (from generated HAL_ANALOG_PINS): 8V2=6, VIN=7, 5V=8, 3V3=9
+PA1 8V2_ADC_IN ADC1 SCALE(1)
+PA2 VIN_ADC_IN ADC1 SCALE(1)
+PA3 5V_ADC_IN ADC1 SCALE(1)
+PA4 3V3_ADC_IN ADC1 SCALE(1)
+
+# 4x rail-voltage monitors over DroneCAN (BatteryInfo), voltage-only
+# (no current sensing on any of these rails). VOLT_SCALE values below are
+# bench-calibrated (2026-08-05) against measured rail voltages, on the
+# CORRECTED PA1-PA4 pin mapping. These now match the theoretical schematic
+# divider math almost exactly, confirming the earlier PA0-PA3 mapping bug
+# (not a hardware/divider issue) explained the old outlier numbers.
+#   BATT1 = VIN (pin 7, mult 10.9225)
+#   BATT2 = 8V2 (pin 6, mult 3.9570)
+#   BATT3 = 5V  (pin 8, mult 1.9829) - via defaults.parm, no hwdef default
+#   BATT4 = 3V3 (pin 9, mult 1.5007) - via defaults.parm, no hwdef default
+# BATT3/BATT4 have no HAL_BATT3_*/HAL_BATT4_* hwdef mechanism in AP_BattMonitor -
+# see defaults.parm in this directory for their MONITOR/VOLT_PIN/VOLT_MULT params.
+define HAL_PERIPH_ENABLE_BATTERY
+define AP_BATT_MONITOR_MAX_INSTANCES 4
+
+define HAL_BATT_MONITOR_DEFAULT 3
+define HAL_BATT_VOLT_PIN 7
+define HAL_BATT_VOLT_SCALE 10.9225
+define HAL_BATT_CURR_PIN -1
+define HAL_BATT_CURR_SCALE 0
+
+define HAL_BATT2_MONITOR_DEFAULT 3
+define HAL_BATT2_VOLT_PIN 6
+define HAL_BATT2_VOLT_SCALE 3.9570
+define HAL_BATT2_CURR_PIN -1
+define HAL_BATT2_CURR_SCALE 0
 
 define HAL_NO_GPIO_IRQ
 define SERIAL_BUFFERS_SIZE 512

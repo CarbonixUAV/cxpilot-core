@@ -427,6 +427,20 @@ void AP_Periph_FW::update()
             palToggleLine(HAL_GPIO_PIN_LED);
         }
 #endif
+#if defined(HAL_GPIO_PIN_5V_PGOOD) || defined(HAL_GPIO_PIN_8V2_PGOOD)
+        can_printf("PGOOD: 5V=%d 8V2=%d",
+#ifdef HAL_GPIO_PIN_5V_PGOOD
+                   (int)palReadLine(HAL_GPIO_PIN_5V_PGOOD),
+#else
+                   -1,
+#endif
+#ifdef HAL_GPIO_PIN_8V2_PGOOD
+                   (int)palReadLine(HAL_GPIO_PIN_8V2_PGOOD)
+#else
+                   -1
+#endif
+                   );
+#endif
 #if 0
 #ifdef HAL_PERIPH_ENABLE_GPS
         hal.serial(0)->printf("GPS status: %u\n", (unsigned)gps.status());
