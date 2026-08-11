@@ -114,11 +114,22 @@ float Aircraft::ground_height_difference() const
     float h1, h2;
     if (sitl &&
         terrain != nullptr &&
-        sitl->terrain_enable &&
-        terrain->height_amsl(home, h1, false) &&
-        terrain->height_amsl(location, h2, false)) {
-        h2 += local_ground_level;
-        return h2 - h1;
+        sitl->terrain_enable) {
+        if (terrain->height_amsl(home, h1, false) &&
+            terrain->height_amsl(location, h2, false)) {
+            last_terrain_height_difference = h2 - h1;
+            have_terrain_height_difference = true;
+        }
+        if (have_terrain_height_difference) {
+            /*
+              hold the last known terrain height difference over a cache
+              miss. Terrain data is not always in the cache when crossing a
+              grid boundary, and falling back to a flat earth at home
+              altitude gives a large step in ground height, which can look
+              like a ground impact when flying below home altitude
+             */
+            return last_terrain_height_difference + local_ground_level;
+        }
     }
 #endif
     return local_ground_level;

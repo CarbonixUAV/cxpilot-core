@@ -21,6 +21,7 @@
 #if AP_SIM_ENABLED
 
 #include <AP_Math/AP_Math.h>
+#include <AP_Terrain/AP_Terrain_config.h>
 
 #include "SITL.h"
 #include "SITL_Input.h"
@@ -207,6 +208,12 @@ protected:
     float battery_voltage;
     float battery_current;
     float local_ground_level;            // ground level at local position
+#if AP_TERRAIN_AVAILABLE
+    // last terrain height difference between home and the current
+    // location, used to ride through terrain cache misses
+    mutable float last_terrain_height_difference;
+    mutable bool have_terrain_height_difference{false};
+#endif
     bool lock_step_scheduled;
     bool flightaxis_sync_imus_to_frames; // causes the frame counter to be incremented on each timestep, IMUs will then update at the same rate
     uint32_t last_one_hz_ms;
