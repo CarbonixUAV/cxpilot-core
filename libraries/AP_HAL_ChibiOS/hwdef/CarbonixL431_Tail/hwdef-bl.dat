@@ -1,0 +1,52 @@
+# hw definition file for processing by chibios_pins.py
+# Carbonix Tail CPC board (schematic CX43040019) - bootloader
+
+# MCU class and specific type
+MCU STM32L431 STM32L431xx
+
+FLASH_RESERVE_START_KB 0
+FLASH_BOOTLOADER_LOAD_KB 36
+
+# reserve some space for params
+APP_START_OFFSET_KB 4
+
+# board ID for firmware load
+APJ_BOARD_ID 5001
+
+# setup build for a peripheral firmware
+env AP_PERIPH 1
+
+# U9 is a 16MHz active crystal oscillator (VDD/EN/OUTPUT/GND), not a
+# passive crystal, so HSE must run in bypass mode
+OSCILLATOR_HZ 16000000
+define STM32_HSE_BYPASS
+
+# assume 256k flash part
+FLASH_SIZE_KB 256
+
+# a fault LED
+PC13 LED_BOOTLOADER OUTPUT LOW
+define HAL_LED_ON 1
+
+# enable CAN support - BUS1 (CAN1) only. BUS2/CAN2 pads are fitted for
+# termination only on this board, transceiver components are DNP.
+PA11 CAN1_RX CAN1
+PA12 CAN1_TX CAN1
+
+CAN_ORDER 1
+
+# use a small bootloader timeout
+define HAL_BOOTLOADER_TIMEOUT 1000
+
+define HAL_USE_SERIAL FALSE
+define HAL_NO_GPIO_IRQ
+define HAL_USE_EMPTY_IO TRUE
+define PORT_INT_REQUIRED_STACK 64
+define DMA_RESERVE_SIZE 0
+
+MAIN_STACK 0x800
+PROCESS_STACK 0x800
+
+# pins for SWD debugging with a STlink or black-magic probe
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
