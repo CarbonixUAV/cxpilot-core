@@ -427,6 +427,59 @@ void AP_Periph_FW::update()
             palToggleLine(HAL_GPIO_PIN_LED);
         }
 #endif
+#ifdef HAL_PERIPH_CPC_BRINGUP_TEST
+#if defined(HAL_GPIO_PIN_LED_STROBE_EN) && defined(HAL_GPIO_PIN_LED_POSITION_EN)
+        palToggleLine(HAL_GPIO_PIN_LED_STROBE_EN);
+        palToggleLine(HAL_GPIO_PIN_LED_POSITION_EN);
+#endif
+#if AP_TEMPERATURE_SENSOR_ENABLED
+        {
+            float temp1, temp2, temp3, temp4;
+            const bool h1 = temperature_sensor.get_temperature(temp1, 0);
+            const bool h2 = temperature_sensor.get_temperature(temp2, 1);
+            const bool h3 = temperature_sensor.get_temperature(temp3, 2);
+            const bool h4 = temperature_sensor.get_temperature(temp4, 3);
+            can_printf("TMP1075: 8V2=%.1f 5V=%.1f 3V3=%.1f BRD=%.1f",
+                       h1 ? temp1 : -1,
+                       h2 ? temp2 : -1,
+                       h3 ? temp3 : -1,
+                       h4 ? temp4 : -1);
+        }
+#endif
+#if defined(HAL_GPIO_PIN_8V2_TEMP_ALERT) || defined(HAL_GPIO_PIN_5V_TEMP_ALERT) || \
+    defined(HAL_GPIO_PIN_3V3_TEMP_ALERT) || defined(HAL_GPIO_PIN_BRD_TEMP_ALERT)
+        // active-low: 0 = alert asserted (TMP1075 LLIM/HLIM comparator tripped), 1 = normal
+        can_printf("TEMP_ALERT: 8V2=%d 5V=%d 3V3=%d BRD=%d",
+#ifdef HAL_GPIO_PIN_8V2_TEMP_ALERT
+                   (int)palReadLine(HAL_GPIO_PIN_8V2_TEMP_ALERT),
+#else
+                   -1,
+#endif
+#ifdef HAL_GPIO_PIN_5V_TEMP_ALERT
+                   (int)palReadLine(HAL_GPIO_PIN_5V_TEMP_ALERT),
+#else
+                   -1,
+#endif
+#ifdef HAL_GPIO_PIN_3V3_TEMP_ALERT
+                   (int)palReadLine(HAL_GPIO_PIN_3V3_TEMP_ALERT),
+#else
+                   -1,
+#endif
+#ifdef HAL_GPIO_PIN_BRD_TEMP_ALERT
+                   (int)palReadLine(HAL_GPIO_PIN_BRD_TEMP_ALERT)
+#else
+                   -1
+#endif
+                   );
+#endif
+#ifdef HAL_PERIPH_ENABLE_BATTERY
+        can_printf("ADC: VIN=%.2f 8V2=%.2f 5V=%.2f 3V3=%.2f",
+                   battery_lib.voltage(0),
+                   battery_lib.voltage(1),
+                   battery_lib.voltage(2),
+                   battery_lib.voltage(3));
+#endif
+#endif // HAL_PERIPH_CPC_BRINGUP_TEST
 #if 0
 #ifdef HAL_PERIPH_ENABLE_GPS
         hal.serial(0)->printf("GPS status: %u\n", (unsigned)gps.status());
@@ -479,6 +532,14 @@ void AP_Periph_FW::update()
             const uint32_t phase_ms = uint32_t(epoch_ms % period_ms);
             palWriteLine(HAL_GPIO_PIN_LED_SYNC, phase_ms >= pulse_ms);
         }
+    }
+#endif
+
+#if defined(HAL_PERIPH_CPC_BRINGUP_TEST) && defined(HAL_GPIO_PIN_5V_PWR_EN)
+    static uint32_t last_5v_pwr_test_ms;
+    if (now - last_5v_pwr_test_ms > 5000) {
+        last_5v_pwr_test_ms = now;
+        palToggleLine(HAL_GPIO_PIN_5V_PWR_EN);
     }
 #endif
 

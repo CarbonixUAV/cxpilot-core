@@ -14,6 +14,9 @@ define HAL_STORAGE_SIZE 800
 # board ID for firmware load
 APJ_BOARD_ID 5000
 
+# bring-up test toggles/debug prints in AP_Periph.cpp - remove before release
+define HAL_PERIPH_CPC_BRINGUP_TEST
+
 # setup build for a peripheral firmware
 env AP_PERIPH 1
 
