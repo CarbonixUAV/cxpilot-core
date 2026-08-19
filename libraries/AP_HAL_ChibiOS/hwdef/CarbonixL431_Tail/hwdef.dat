@@ -41,16 +41,60 @@ PB7 USART1_RX USART1 SPEED_HIGH
 PA11 CAN1_RX CAN1
 PA12 CAN1_TX CAN1
 
-# no ADC pins in this stage - avoid ChibiOS's default HAL_USE_ADC TRUE
-# picking up no assigned ADC peripheral
-define HAL_USE_ADC FALSE
-
 # LED, status LED on PC13
 PC13 LED OUTPUT LOW GPIO(1)
 
 # pins for SWD debugging with a STlink or black-magic probe
 PA13 JTMS-SWDIO SWD
 PA14 JTCK-SWCLK SWD
+
+# PGOOD monitoring for 8V2 Left/Right and 3V3 regulated rails. 3V3 rail
+# has no MCU-controlled enable (EN tied always-on on the board), so only
+# PGOOD is read - no 3V3_PWR_EN pin exists on this MCU.
+PB1  8V2_RIGHT_PGOOD INPUT FLOATING GPIO(2)
+PB11 8V2_LEFT_PGOOD  INPUT FLOATING GPIO(3)
+PB5  3V3_PGOOD       INPUT FLOATING GPIO(4)
+
+# 8V2 Left/Right regulator enables. Driven HIGH by default so the rails
+# are always enabled once the node is powered.
+PB0  8V2_RIGHT_PWR_EN OUTPUT HIGH GPIO(5)
+PB10 8V2_LEFT_PWR_EN  OUTPUT HIGH GPIO(6)
+
+define HAL_USE_ADC TRUE
+define STM32_ADC_USE_ADC1 TRUE
+
+# rail-voltage sense ADC inputs (resistor-divider scaled, see schematic)
+PA0 VIN_RIGHT_ADC_IN ADC1 SCALE(1)
+PA1 8V2_RIGHT_ADC_IN ADC1 SCALE(1)
+PA2 3V3_ADC_IN       ADC1 SCALE(1)
+PA3 8V2_LEFT_ADC_IN  ADC1 SCALE(1)
+PA4 VIN_LEFT_ADC_IN  ADC1 SCALE(1)
+
+# 5x rail-voltage monitors over DroneCAN (BatteryInfo), voltage-only
+# (no current sensing on any of these rails).
+#   BATT1 = VIN_RIGHT (ADC1_IN5, mult 11.0)
+#   BATT2 = VIN_LEFT  (ADC1_IN9, mult 11.0)
+#   BATT3 = 8V2_RIGHT (ADC1_IN6, mult 4.0)  - via defaults.parm, no hwdef default
+#   BATT4 = 8V2_LEFT  (ADC1_IN8, mult 4.0)  - via defaults.parm, no hwdef default
+#   BATT5 = 3V3       (ADC1_IN7, mult 1.5)  - via defaults.parm, no hwdef default
+# BATT3/4/5 have no HAL_BATT3_*/HAL_BATT4_*/HAL_BATT5_* hwdef mechanism in
+# AP_BattMonitor - see defaults.parm in this directory for their
+# MONITOR/VOLT_PIN/VOLT_MULT params. VOLT_MULT values are theoretical
+# from schematic divider resistors, pending hardware recalibration.
+define HAL_PERIPH_ENABLE_BATTERY
+define AP_BATT_MONITOR_MAX_INSTANCES 5
+
+define HAL_BATT_MONITOR_DEFAULT 3
+define HAL_BATT_VOLT_PIN 5
+define HAL_BATT_VOLT_SCALE 11.0
+define HAL_BATT_CURR_PIN -1
+define HAL_BATT_CURR_SCALE 0
+
+define HAL_BATT2_MONITOR_DEFAULT 3
+define HAL_BATT2_VOLT_PIN 9
+define HAL_BATT2_VOLT_SCALE 11.0
+define HAL_BATT2_CURR_PIN -1
+define HAL_BATT2_CURR_SCALE 0
 
 define HAL_NO_GPIO_IRQ
 define SERIAL_BUFFERS_SIZE 512

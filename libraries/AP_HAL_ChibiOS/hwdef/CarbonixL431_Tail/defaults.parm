@@ -1,0 +1,22 @@
+# BATT1 (VIN_RIGHT) and BATT2 (VIN_LEFT) get their MONITOR/VOLT_PIN/VOLT_MULT
+# from hwdef.dat compile-time defaults (HAL_BATT_*/HAL_BATT2_*). BATT3/4/5
+# have no such hwdef mechanism in AP_BattMonitor, so they're set here instead.
+#
+# VOLT_MULT values are theoretical, from schematic divider resistors -
+# not yet recalibrated against measured hardware (see WING CPC's
+# BATT3/BATT4 recalibration precedent).
+
+BATT3_MONITOR 3
+BATT3_VOLT_PIN 6
+BATT3_VOLT_MULT 4.0
+BATT3_CURR_PIN -1
+
+BATT4_MONITOR 3
+BATT4_VOLT_PIN 8
+BATT4_VOLT_MULT 4.0
+BATT4_CURR_PIN -1
+
+BATT5_MONITOR 3
+BATT5_VOLT_PIN 7
+BATT5_VOLT_MULT 1.5
+BATT5_CURR_PIN -1
