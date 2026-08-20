@@ -27,14 +27,12 @@ FLASH_SIZE_KB 256
 
 define HAL_CAN_POOL_SIZE 6000
 
-# no UARTs are broken out on this board; USART1 declared on free/unused
-# pins purely to satisfy AP_HAL_ChibiOS's build requirements (UARTDriver.cpp
-# references ChibiOS's SerialDriver type unconditionally) - not connected to
-# any physical hardware on this board
-SERIAL_ORDER USART1
-
-PB6 USART1_TX USART1 SPEED_HIGH
-PB7 USART1_RX USART1 SPEED_HIGH
+# no UARTs are broken out on this board and HAL_NO_GCS is set below, so
+# UART support is disabled entirely - see AP_HAL_ChibiOS/UARTDriver.cpp's
+# HAL_NO_UARTDRIVER guard
+SERIAL_ORDER
+define HAL_USE_UART FALSE
+define HAL_NO_UARTDRIVER TRUE
 
 # enable CAN support - BUS1 (CAN1) only. BUS2/CAN2 pads are fitted for
 # termination only on this board, transceiver components are DNP.
