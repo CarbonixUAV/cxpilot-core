@@ -844,6 +844,17 @@ void AP_Periph_FW::onTransferReceived(CanardInstance* canard_instance,
 #endif
 #endif // HAL_PERIPH_ENABLE_GPS
 
+#ifdef HAL_GPIO_PIN_LED_SYNC
+    // standalone Fix2 subscription for LED_SYNC GPS-epoch phase reference -
+    // deliberately independent of HAL_PERIPH_ENABLE_GPS/AP_GPS, since this
+    // board's own GPS support is publish-only (see docs/plans) and doesn't
+    // subscribe to another node's Fix2. This CPC has its own local GPS on
+    // its own bus, so we just need one field out of its Fix2 broadcast.
+    case UAVCAN_EQUIPMENT_GNSS_FIX2_ID:
+        handle_Fix2(canard_instance, transfer);
+        break;
+#endif
+
 #if AP_UART_MONITOR_ENABLED
     case UAVCAN_TUNNEL_TARGETTED_ID:
         handle_tunnel_Targetted(canard_instance, transfer);
@@ -966,6 +977,12 @@ bool AP_Periph_FW::shouldAcceptTransfer(const CanardInstance* canard_instance,
         return true;
 #endif
 #endif // HAL_PERIPH_ENABLE_GPS
+
+#ifdef HAL_GPIO_PIN_LED_SYNC
+    case UAVCAN_EQUIPMENT_GNSS_FIX2_ID:
+        *out_data_type_signature = UAVCAN_EQUIPMENT_GNSS_FIX2_SIGNATURE;
+        return true;
+#endif
 
 #if AP_UART_MONITOR_ENABLED
     case UAVCAN_TUNNEL_TARGETTED_ID:
