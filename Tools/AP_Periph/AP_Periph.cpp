@@ -410,6 +410,71 @@ void AP_Periph_FW::show_stack_free()
 }
 #endif
 
+void AP_Periph_FW::can_transceiver_test_update()
+{
+#if defined(HAL_CAN_TRANSCEIVER_TEST) && \
+    defined(HAL_GPIO_PIN_BUS_FAULT) && \
+    defined(HAL_GPIO_PIN_DRVER_SILENT_EN)
+
+    const uint32_t now = AP_HAL::millis();
+    
+// CAN_BUS_FAULT TEST
+
+    //TCAN337 FAULT is HIGH in idle/normal state with external pull up resistor
+    static bool fault_initialised;  // initial FAULT-pin reading 
+    static bool fault_was_asserted; // previous FAULT-pin for change detection
+
+    // Current FAULT-pin read from TCAN337
+    const bool fault_asserted = palReadLine(HAL_GPIO_PIN_BUS_FAULT);    
+
+    // Initial/first check - need to include this to ensure startup of system doesn't appear like a fault event
+    if (!fault_initialised) {
+        fault_initialised = true;
+        fault_was_asserted = fault_asserted;
+        can_printf("CAN PHY fault initial=%u", unsigned(fault_asserted));
+    }
+    // Continuous checks post startup of system - checks and logs only when FAULT pin changes state
+    // No debug message on every iteration
+    else if (fault_asserted != fault_was_asserted) {
+        fault_was_asserted = fault_asserted;
+    
+        // TCAN337 reports a fault condition (physical shorting or otherwise)
+        if(fault_asserted) {
+            can_printf("CAN PHY fault asserted");
+        }
+        // TCAN337 FAULT-pin returns LOW - reported condition cleared
+        else {
+            can_printf("CAN PHY FAULT cleared");
+        }
+    }
+// CAN_DRVER_SILENT_EN TEST
+    
+    static uint32_t last_silent_toggle_ms;  // previous SILENT toggle time
+    static bool silent_enabled; // SILENT-pin enabling flag - defined as FALSE here
+
+    //NOTE: SILENT PIN DRIVE HIGH FOR SILENT MODE
+
+    // Setting a period of toggling SILENT-pin every 1.5s
+    // Reset the previous SILENT toggle time to current time when reached 1.5s
+    if (now - last_silent_toggle_ms >= 1500U) {
+        last_silent_toggle_ms = now;
+
+        // if silent_enabled==true, then make it false, put SILENT-pin LOW, and print message that it was just silent
+        // note: first loop will skip this and go to else{} as flag is initially defined as false
+        if (silent_enabled) {
+            palWriteLine(HAL_GPIO_PIN_DRVER_SILENT_EN, 0);
+            silent_enabled = false;
+            can_printf("CAN PHY silent OFF; previous 1.5s interval was silent");
+        }
+
+        // if silent_enabled==false, then make it true and put SILENT-pin HIGH
+        else {
+            palWriteLine(HAL_GPIO_PIN_DRVER_SILENT_EN, 1);
+            silent_enabled = true;
+        }
+    }
+#endif
+}
 
 
 void AP_Periph_FW::update()
@@ -420,6 +485,7 @@ void AP_Periph_FW::update()
 
     static uint32_t last_led_ms;
     uint32_t now = AP_HAL::millis();
+    can_transceiver_test_update(); //CAN IO HEALTH TEST FUNCTION CALL
     if (now - last_led_ms > 1000) {
         last_led_ms = now;
 #ifdef HAL_GPIO_PIN_LED

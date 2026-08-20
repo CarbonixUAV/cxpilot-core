@@ -163,6 +163,7 @@ public:
 
     void init();
     void update();
+    void can_transceiver_test_update();
 
     Parameters g;
 
