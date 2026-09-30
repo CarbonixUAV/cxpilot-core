@@ -108,6 +108,10 @@ void Plane::failsafe_short_on_event(enum failsafe_state fstype, ModeReason reaso
 void Plane::failsafe_long_on_event(enum failsafe_state fstype, ModeReason reason)
 {
 
+    if (reason == ModeReason::GCS_FAILSAFE) {
+        AP_Notify::flags.failsafe_gcs = true;
+    }
+
     // This is how to handle a long loss of control signal failsafe.
     //  If the GCS is locked up we allow control to revert to RC
     RC_Channels::clear_overrides();
@@ -232,6 +236,7 @@ void Plane::failsafe_long_off_event(ModeReason reason)
     long_failsafe_pending = false;
     // We're back in radio contact with RC or GCS
     if (reason == ModeReason:: GCS_FAILSAFE) {
+        AP_Notify::flags.failsafe_gcs = false;
         gcs().send_text(MAV_SEVERITY_WARNING, "GCS Failsafe Off");
     }
     else {
