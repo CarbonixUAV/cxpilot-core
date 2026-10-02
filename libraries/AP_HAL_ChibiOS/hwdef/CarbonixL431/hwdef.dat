@@ -14,6 +14,9 @@ define HAL_STORAGE_SIZE 800
 # board ID for firmware load
 APJ_BOARD_ID 5000
 
+# FlexDebug fault-status packet to the flight controller, see cpc_status.cpp
+define HAL_PERIPH_ENABLE_CPC_STATUS
+
 # setup build for a peripheral firmware
 env AP_PERIPH 1
 
@@ -37,6 +40,10 @@ define HAL_NO_UARTDRIVER TRUE
 # enable CAN support
 PA11 CAN1_RX CAN1
 PA12 CAN1_TX CAN1
+
+# TCAN337 FAULT (schematic CAN_BUS_FAULT), open-drain + ext pull-up, HIGH = fault.
+# Label must not contain "CAN" (af_labels misparse).
+PB13 XCVR_BUS_FAULT INPUT FLOATING GPIO(18)
 
 # LED, status LED on PC13
 PC13 LED OUTPUT LOW GPIO(1)

@@ -230,6 +230,13 @@ public:
     uint32_t led_sync_gnss_timestamp_local_ms;
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_CPC_STATUS
+    // FlexDebug fault-status packet, see cpc_status.cpp
+    void cpc_status_update();
+    uint32_t cpc_status_last_send_ms;
+    uint8_t cpc_status_latch[4];
+#endif
+
 #if HAL_NMEA_OUTPUT_ENABLED
     AP_NMEA_Output nmea;
 #endif
