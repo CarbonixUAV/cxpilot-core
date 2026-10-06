@@ -318,3 +318,30 @@ void AP_Periph_FW::send_relposheading_msg() {
 }
 
 #endif // HAL_PERIPH_ENABLE_GPS
+
+#ifdef HAL_GPIO_PIN_LED_SYNC
+#include <dronecan_msgs.h>
+
+/*
+  standalone Fix2 handler for the LED_SYNC GPS-epoch phase reference.
+  Deliberately independent of HAL_PERIPH_ENABLE_GPS/AP_GPS - this board's own
+  GPS support (above) is publish-only and never subscribes to another node's
+  Fix2, and AP_Periph doesn't wire up AP_GPS_DroneCAN's subscription (that's
+  only done by the full AP_DroneCAN vehicle frontend). We only need one field
+  out of the message, so decode it directly. See docs/plans.
+ */
+void AP_Periph_FW::handle_Fix2(CanardInstance* canard_instance, CanardRxTransfer* transfer)
+{
+    uavcan_equipment_gnss_Fix2 msg;
+    if (uavcan_equipment_gnss_Fix2_decode(transfer, &msg)) {
+        return;
+    }
+    if (msg.status < UAVCAN_EQUIPMENT_GNSS_FIX2_STATUS_3D_FIX || msg.gnss_timestamp.usec == 0) {
+        // no fix yet, or GPS hasn't got its own time solution yet - don't
+        // update our stored reference with a bad/zero timestamp
+        return;
+    }
+    led_sync_gnss_timestamp_usec = msg.gnss_timestamp.usec;
+    led_sync_gnss_timestamp_local_ms = AP_HAL::millis();
+}
+#endif // HAL_GPIO_PIN_LED_SYNC

@@ -223,6 +223,20 @@ public:
 #endif
 #endif
 
+#ifdef HAL_GPIO_PIN_LED_SYNC
+    // GPS-epoch phase reference for LED_SYNC, from the standalone Fix2
+    // handler (see gps.cpp) - independent of AP_GPS/HAL_PERIPH_ENABLE_GPS
+    uint64_t led_sync_gnss_timestamp_usec;
+    uint32_t led_sync_gnss_timestamp_local_ms;
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_CPC_STATUS
+    // FlexDebug fault-status packet, see cpc_status.cpp
+    void cpc_status_update();
+    uint32_t cpc_status_last_send_ms;
+    uint8_t cpc_status_latch[4];
+#endif
+
 #if HAL_NMEA_OUTPUT_ENABLED
     AP_NMEA_Output nmea;
 #endif
@@ -547,6 +561,9 @@ public:
     void handle_arming_status(CanardInstance* canard_instance, CanardRxTransfer* transfer);
     void handle_RTCMStream(CanardInstance* canard_instance, CanardRxTransfer* transfer);
     void handle_MovingBaselineData(CanardInstance* canard_instance, CanardRxTransfer* transfer);
+#ifdef HAL_GPIO_PIN_LED_SYNC
+    void handle_Fix2(CanardInstance* canard_instance, CanardRxTransfer* transfer);
+#endif
     void handle_esc_rawcommand(CanardInstance* canard_instance, CanardRxTransfer* transfer);
     void handle_act_command(CanardInstance* canard_instance, CanardRxTransfer* transfer);
     void handle_beep_command(CanardInstance* canard_instance, CanardRxTransfer* transfer);
