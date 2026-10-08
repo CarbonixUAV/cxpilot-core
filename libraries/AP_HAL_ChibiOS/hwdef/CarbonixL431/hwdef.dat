@@ -14,7 +14,7 @@ define HAL_STORAGE_SIZE 800
 # board ID for firmware load
 APJ_BOARD_ID 5000
 
-# FlexDebug fault-status packet to the flight controller, see cpc_status.cpp
+# FlexDebug fault-status packet (cpc_status.cpp) + CPC_TOG_* test toggles (cpc_test.cpp)
 define HAL_PERIPH_ENABLE_CPC_STATUS
 
 # setup build for a peripheral firmware
@@ -91,10 +91,7 @@ PB1  BRD_TEMP_ALERT INPUT FLOATING GPIO(7)
 PB2 LED_STROBE_EN   OUTPUT HIGH GPIO(8)
 PA7 LED_POSITION_EN OUTPUT HIGH GPIO(9)
 
-# LED strobe/position TPS27S100 FLT pins. DIAG_EN is tied to GND on both
-# channels (not MCU-controlled), which per the TPS27S100 datasheet disables
-# all diagnostics - FLT is permanently high-impedance and will never assert
-# a fault unless the board is revised to drive DIAG_EN from the MCU.
+# LED strobe/position TPS27S100 FLT pins
 PB0  LED_POSITION_FLT INPUT FLOATING GPIO(10)
 PB12 LED_STROBE_FLT   INPUT FLOATING GPIO(11)
 
