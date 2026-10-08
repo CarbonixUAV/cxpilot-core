@@ -483,6 +483,7 @@ void AP_Periph_FW::update()
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_CPC_STATUS
+    cpc_test_update();
     cpc_status_update();
 #endif
 

@@ -99,6 +99,10 @@ public:
         k_param_esc_extended_telem_rate,
         k_param_imu_sample_rate,
         k_param_imu,
+        k_param_cpc_tog_5v,
+        k_param_cpc_tog_8v2,
+        k_param_cpc_tog_stb,
+        k_param_cpc_tog_pos,
     };
 
     AP_Int16 format_version;
@@ -241,6 +245,14 @@ public:
     AP_Int8 can_terminate[HAL_NUM_CAN_IFACES];
 
     AP_Int8 node_stats;
+
+#ifdef HAL_PERIPH_ENABLE_CPC_STATUS
+    AP_Int16 cpc_tog_5v;
+    AP_Int16 cpc_tog_8v2;
+    AP_Int16 cpc_tog_stb;
+    AP_Int16 cpc_tog_pos;
+#endif
+
     Parameters() {}
 };
 
