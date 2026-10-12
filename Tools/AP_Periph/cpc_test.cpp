@@ -9,15 +9,16 @@
 /*
   Test-only toggling of CPC output pins from DroneCAN params (CPC_TOG_*).
   Each param is a toggle period in ms; 0 holds the pin at its hwdef default
-  (HIGH = enabled). Only drives outputs - the resulting faults are reported by
-  cpc_status.cpp as usual. All params are reset to 0 at boot.
+  (HIGH = enabled), -1 holds it LOW (disabled). Only drives outputs - the
+  resulting faults are reported by cpc_status.cpp as usual. All params are
+  reset to 0 at boot.
  */
 
-// drive one pin: toggle every period_ms, or hold HIGH when the test is off
+// drive one pin: toggle every period_ms, hold LOW at -1, or hold HIGH when the test is off
 static void cpc_test_toggle(int16_t period_ms, ioline_t line, uint32_t &last_ms, uint32_t now_ms)
 {
     if (period_ms <= 0) {
-        palWriteLine(line, 1);
+        palWriteLine(line, period_ms == -1 ? 0 : 1);
         last_ms = now_ms;
         return;
     }
