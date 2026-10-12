@@ -1,0 +1,18 @@
+# BATT1 (VIN) and BATT2 (8V2) get their MONITOR/VOLT_PIN/VOLT_MULT from
+# hwdef.dat compile-time defaults (HAL_BATT_*/HAL_BATT2_*). BATT3/BATT4 have
+# no such hwdef mechanism in AP_BattMonitor, so they're set here instead.
+#
+# BATT3 (5V) and BATT4 (3V3) VOLT_MULT re-calibrated 2026-08-05 on the
+# CORRECTED PA1-PA4 pin mapping - both now match theoretical schematic
+# divider math almost exactly (BATT4: R29=1.5K/R33=3K -> 2.2V pin voltage
+# at 3.3V input, confirmed against STM32L431's raw ADC reading of 2.199V).
+
+BATT3_MONITOR 3
+BATT3_VOLT_PIN 8
+BATT3_VOLT_MULT 1.9829
+BATT3_CURR_PIN -1
+
+BATT4_MONITOR 3
+BATT4_VOLT_PIN 9
+BATT4_VOLT_MULT 1.5007
+BATT4_CURR_PIN -1
