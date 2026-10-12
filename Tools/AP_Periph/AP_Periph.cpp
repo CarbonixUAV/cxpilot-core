@@ -450,6 +450,9 @@ void AP_Periph_FW::update()
 #endif
         hal.scheduler->delay(1);
 #endif
+#ifdef HAL_PERIPH_ENABLE_CPC_DEBUG_PRINT
+        cpc_debug_print();
+#endif
 #ifdef HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY
         hal.rcout->set_serial_led_num_LEDs(HAL_PERIPH_NEOPIXEL_CHAN_WITHOUT_NOTIFY, HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY, AP_HAL::RCOutput::MODE_NEOPIXEL);
 #endif
@@ -465,22 +468,6 @@ void AP_Periph_FW::update()
         GCS_SEND_MESSAGE(MSG_HEARTBEAT);
         GCS_SEND_MESSAGE(MSG_SYS_STATUS);
     }
-
-#ifdef HAL_GPIO_PIN_LED_SYNC
-    {
-        constexpr uint32_t period_ms = 1263;
-        constexpr uint32_t pulse_ms = 10;
-        if (led_sync_gnss_timestamp_usec == 0) {
-            // no valid fix yet - stay idle/released, no toggling
-            palWriteLine(HAL_GPIO_PIN_LED_SYNC, 1);
-        } else {
-            const uint64_t epoch_ms = led_sync_gnss_timestamp_usec / 1000U
-                                       + (now - led_sync_gnss_timestamp_local_ms);
-            const uint32_t phase_ms = uint32_t(epoch_ms % period_ms);
-            palWriteLine(HAL_GPIO_PIN_LED_SYNC, phase_ms >= pulse_ms);
-        }
-    }
-#endif
 
     static uint32_t last_error_ms;
     const auto &ierr = AP::internalerror();

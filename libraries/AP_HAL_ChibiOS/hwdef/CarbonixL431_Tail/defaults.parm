@@ -3,20 +3,37 @@
 # have no such hwdef mechanism in AP_BattMonitor, so they're set here instead.
 #
 # VOLT_MULT values are theoretical, from schematic divider resistors -
-# not yet recalibrated against measured hardware (see WING CPC's
-# BATT3/BATT4 recalibration precedent).
+# not yet recalibrated against measured hardware.
 
+# 8V2_RIGHT, PA5 / ADC1_IN10
 BATT3_MONITOR 3
-BATT3_VOLT_PIN 6
+BATT3_VOLT_PIN 10
 BATT3_VOLT_MULT 4.0
 BATT3_CURR_PIN -1
 
+# 8V2_LEFT, PA3 / ADC1_IN8
 BATT4_MONITOR 3
 BATT4_VOLT_PIN 8
 BATT4_VOLT_MULT 4.0
 BATT4_CURR_PIN -1
 
+# 3V3, PA4 / ADC1_IN9
 BATT5_MONITOR 3
-BATT5_VOLT_PIN 7
+BATT5_VOLT_PIN 9
 BATT5_VOLT_MULT 1.5
 BATT5_CURR_PIN -1
+
+# 4x TMP1075 (TYPE 8) on I2C bus 0
+# TEMP1 = 8V2_LEFT 0x48, TEMP2 = 8V2_RIGHT 0x49, TEMP3 = 3V3 0x4B, TEMP4 = BRD 0x4C
+TEMP1_TYPE 8
+TEMP1_BUS 0
+TEMP1_ADDR 72
+TEMP2_TYPE 8
+TEMP2_BUS 0
+TEMP2_ADDR 73
+TEMP3_TYPE 8
+TEMP3_BUS 0
+TEMP3_ADDR 75
+TEMP4_TYPE 8
+TEMP4_BUS 0
+TEMP4_ADDR 76

@@ -39,60 +39,87 @@ define HAL_NO_UARTDRIVER TRUE
 PA11 CAN1_RX CAN1
 PA12 CAN1_TX CAN1
 
-# LED, status LED on PC13
-PC13 LED OUTPUT LOW GPIO(1)
+# status LED LD6 on PB9, active-low (anode to 3V3_MCU via R44)
+PB9 LED OUTPUT HIGH GPIO(1)
 
 # pins for SWD debugging with a STlink or black-magic probe
 PA13 JTMS-SWDIO SWD
 PA14 JTCK-SWCLK SWD
 
-# PGOOD monitoring for 8V2 Left/Right and 3V3 regulated rails. 3V3 rail
-# has no MCU-controlled enable (EN tied always-on on the board), so only
-# PGOOD is read - no 3V3_PWR_EN pin exists on this MCU.
-PB1  8V2_RIGHT_PGOOD INPUT FLOATING GPIO(2)
-PB11 8V2_LEFT_PGOOD  INPUT FLOATING GPIO(3)
-PB5  3V3_PGOOD       INPUT FLOATING GPIO(4)
+# PGOOD inputs, HIGH = rail good
+PB0  3V3_PGOOD       INPUT FLOATING GPIO(2)
+PB6  8V2_LEFT_PGOOD  INPUT FLOATING GPIO(3)
+PB10 8V2_RIGHT_PGOOD INPUT FLOATING GPIO(4)
 
-# 8V2 Left/Right regulator enables. Driven HIGH by default so the rails
-# are always enabled once the node is powered.
-PB0  8V2_RIGHT_PWR_EN OUTPUT HIGH GPIO(5)
-PB10 8V2_LEFT_PWR_EN  OUTPUT HIGH GPIO(6)
+# 8V2 regulator enables, driven HIGH so rails are on once powered.
+# 3V3 rail EN is tied always-on on the board.
+PB8  8V2_LEFT_PWR_EN  OUTPUT HIGH GPIO(5)
+PB11 8V2_RIGHT_PWR_EN OUTPUT HIGH GPIO(6)
+
+# TMP1075 ALERT inputs, active-low
+PB1 3V3_TEMP_ALERT       INPUT FLOATING GPIO(7)
+PB2 8V2_RIGHT_TEMP_ALERT INPUT FLOATING GPIO(8)
+PB5 BRD_TEMP_ALERT       INPUT FLOATING GPIO(9)
+PB7 8V2_LEFT_TEMP_ALERT  INPUT FLOATING GPIO(10)
+
+# TCAN337 transceiver. Schematic nets CAN_BUS_FAULT/CAN_DRVR_SILENT_EN are
+# relabelled - any label containing "CAN" is parsed as an alt-function pin.
+# FAULT is HIGH on fault; SILENT LOW = normal, HIGH = silent.
+PB14 BUS_FAULT     INPUT FLOATING GPIO(11)
+PB13 BUS_SILENT_EN OUTPUT LOW GPIO(12)
+
+# I2C1 bus for the 4x TMP1075 (0x48/0x49/0x4B/0x4C)
+PA9  I2C1_SCL I2C1
+PA10 I2C1_SDA I2C1
+
+define HAL_USE_I2C TRUE
+define STM32_I2C_USE_I2C1 TRUE
+I2C_ORDER I2C1
 
 define HAL_USE_ADC TRUE
 define STM32_ADC_USE_ADC1 TRUE
 
 # rail-voltage sense ADC inputs (resistor-divider scaled, see schematic)
-PA0 VIN_RIGHT_ADC_IN ADC1 SCALE(1)
-PA1 8V2_RIGHT_ADC_IN ADC1 SCALE(1)
-PA2 3V3_ADC_IN       ADC1 SCALE(1)
+PA2 VIN_LEFT_ADC_IN  ADC1 SCALE(1)
 PA3 8V2_LEFT_ADC_IN  ADC1 SCALE(1)
-PA4 VIN_LEFT_ADC_IN  ADC1 SCALE(1)
+PA4 3V3_ADC_IN       ADC1 SCALE(1)
+PA5 8V2_RIGHT_ADC_IN ADC1 SCALE(1)
+PA6 VIN_RIGHT_ADC_IN ADC1 SCALE(1)
 
-# 5x rail-voltage monitors over DroneCAN (BatteryInfo), voltage-only
-# (no current sensing on any of these rails).
-#   BATT1 = VIN_RIGHT (ADC1_IN5, mult 11.0)
-#   BATT2 = VIN_LEFT  (ADC1_IN9, mult 11.0)
-#   BATT3 = 8V2_RIGHT (ADC1_IN6, mult 4.0)  - via defaults.parm, no hwdef default
-#   BATT4 = 8V2_LEFT  (ADC1_IN8, mult 4.0)  - via defaults.parm, no hwdef default
-#   BATT5 = 3V3       (ADC1_IN7, mult 1.5)  - via defaults.parm, no hwdef default
-# BATT3/4/5 have no HAL_BATT3_*/HAL_BATT4_*/HAL_BATT5_* hwdef mechanism in
-# AP_BattMonitor - see defaults.parm in this directory for their
-# MONITOR/VOLT_PIN/VOLT_MULT params. VOLT_MULT values are theoretical
-# from schematic divider resistors, pending hardware recalibration.
+# 4x TMP1075 temperature sensors, configured via TEMPn_* in defaults.parm.
+# AP_TEMPERATURE_SENSOR_ENABLED must be forced on - it defaults off below
+# 1024K flash.
+define AP_TEMPERATURE_SENSOR_ENABLED 1
+define HAL_PERIPH_ENABLE_DEVICE_TEMPERATURE
+define AP_TEMPERATURE_SENSOR_MAX_INSTANCES 4
+
+# 5x rail-voltage monitors over DroneCAN (BatteryInfo), voltage-only.
+#   BATT1 = VIN_RIGHT (ch 11, mult 11.0)
+#   BATT2 = VIN_LEFT  (ch 7,  mult 11.0)
+#   BATT3 = 8V2_RIGHT (ch 10, mult 4.0) - via defaults.parm
+#   BATT4 = 8V2_LEFT  (ch 8,  mult 4.0) - via defaults.parm
+#   BATT5 = 3V3       (ch 9,  mult 1.5) - via defaults.parm
+# VOLT_MULT values are theoretical from schematic dividers.
 define HAL_PERIPH_ENABLE_BATTERY
 define AP_BATT_MONITOR_MAX_INSTANCES 5
 
 define HAL_BATT_MONITOR_DEFAULT 3
-define HAL_BATT_VOLT_PIN 5
+define HAL_BATT_VOLT_PIN 11
 define HAL_BATT_VOLT_SCALE 11.0
 define HAL_BATT_CURR_PIN -1
 define HAL_BATT_CURR_SCALE 0
 
 define HAL_BATT2_MONITOR_DEFAULT 3
-define HAL_BATT2_VOLT_PIN 9
+define HAL_BATT2_VOLT_PIN 7
 define HAL_BATT2_VOLT_SCALE 11.0
 define HAL_BATT2_CURR_PIN -1
 define HAL_BATT2_CURR_SCALE 0
+
+# 1Hz voltage/temperature print to DroneCAN log console (cpc_debug.cpp).
+# Labels are in BATT1..5 / TEMP1..4 instance order.
+define HAL_PERIPH_ENABLE_CPC_DEBUG_PRINT
+define HAL_PERIPH_CPC_BATT_LABELS { "VINR", "VINL", "8V2R", "8V2L", "3V3" }
+define HAL_PERIPH_CPC_TEMP_LABELS { "8V2L", "8V2R", "3V3", "BRD" }
 
 define HAL_NO_GPIO_IRQ
 define SERIAL_BUFFERS_SIZE 512

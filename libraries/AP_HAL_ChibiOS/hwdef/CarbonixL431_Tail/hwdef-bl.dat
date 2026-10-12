@@ -24,9 +24,9 @@ define STM32_HSE_BYPASS
 # assume 256k flash part
 FLASH_SIZE_KB 256
 
-# a fault LED
-PC13 LED_BOOTLOADER OUTPUT LOW
-define HAL_LED_ON 1
+# status LED LD6 on PB9, active-low
+PB9 LED_BOOTLOADER OUTPUT HIGH
+define HAL_LED_ON 0
 
 # enable CAN support - BUS1 (CAN1) only. BUS2/CAN2 pads are fitted for
 # termination only on this board, transceiver components are DNP.
