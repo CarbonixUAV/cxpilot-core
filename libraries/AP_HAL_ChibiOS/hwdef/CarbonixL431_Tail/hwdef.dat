@@ -14,6 +14,9 @@ define HAL_STORAGE_SIZE 800
 # board ID for firmware load
 APJ_BOARD_ID 5001
 
+# FlexDebug fault-status packet (cpc_status.cpp) + CPC_TOG_* test toggles (cpc_test.cpp)
+define HAL_PERIPH_ENABLE_CPC_STATUS
+
 # setup build for a peripheral firmware
 env AP_PERIPH 1
 

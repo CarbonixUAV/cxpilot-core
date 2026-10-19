@@ -469,6 +469,11 @@ void AP_Periph_FW::update()
         GCS_SEND_MESSAGE(MSG_SYS_STATUS);
     }
 
+#ifdef HAL_PERIPH_ENABLE_CPC_STATUS
+    cpc_test_update();
+    cpc_status_update();
+#endif
+
     static uint32_t last_error_ms;
     const auto &ierr = AP::internalerror();
     if (now - last_error_ms > 5000 && ierr.errors()) {

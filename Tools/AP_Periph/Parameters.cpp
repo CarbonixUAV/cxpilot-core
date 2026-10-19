@@ -737,6 +737,24 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(imu, "INS", AP_InertialSensor),
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_CPC_STATUS
+    // @Param: CPC_TOG_8V2L
+    // @DisplayName: CPC test toggle 8V2_LEFT_PWR_EN
+    // @Description: Test only. Toggle period of the 8V2 left rail enable. 0 disables the test and holds the rail on, -1 holds it off. Reset to 0 at boot.
+    // @Units: ms
+    // @Range: -1 32767
+    // @User: Advanced
+    GSCALAR(cpc_tog_8v2l, "CPC_TOG_8V2L", 0),
+
+    // @Param: CPC_TOG_8V2R
+    // @DisplayName: CPC test toggle 8V2_RIGHT_PWR_EN
+    // @Description: Test only. Toggle period of the 8V2 right rail enable. 0 disables the test and holds the rail on, -1 holds it off. Reset to 0 at boot.
+    // @Units: ms
+    // @Range: -1 32767
+    // @User: Advanced
+    GSCALAR(cpc_tog_8v2r, "CPC_TOG_8V2R", 0),
+#endif
+
     AP_VAREND
 };
 

@@ -401,6 +401,16 @@ public:
     void cpc_debug_print();
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_CPC_STATUS
+    // FlexDebug fault-status packet, see cpc_status.cpp
+    void cpc_status_update();
+    uint32_t cpc_status_last_send_ms;
+    uint8_t cpc_status_latch[3];
+
+    // DroneCAN-param test toggles of CPC output pins, see cpc_test.cpp
+    void cpc_test_update();
+#endif
+
 #if defined(HAL_PERIPH_ENABLE_NOTIFY) || defined(HAL_PERIPH_NEOPIXEL_COUNT_WITHOUT_NOTIFY)
     void update_rainbow();
 #endif
