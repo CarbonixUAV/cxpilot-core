@@ -99,6 +99,7 @@ public:
         k_param_esc_extended_telem_rate,
         k_param_imu_sample_rate,
         k_param_imu,
+        k_param_pmu_port,
     };
 
     AP_Int16 format_version;
@@ -215,6 +216,10 @@ public:
 
 #ifdef HAL_PERIPH_ENABLE_IMU
     AP_Int16 imu_sample_rate;
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_PMU_TELEM
+    AP_Int8 pmu_port;
 #endif
 
 #if HAL_PERIPH_CAN_MIRROR

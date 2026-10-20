@@ -737,6 +737,17 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(imu, "INS", AP_InertialSensor),
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_PMU_TELEM
+    // @Param: PMU_PORT
+    // @DisplayName: PMU telemetry serial port
+    // @Description: Serial port receiving Plettenberg S-GCU RS232 telemetry. -1 disables.
+    // @Range: -1 10
+    // @Increment: 1
+    // @User: Advanced
+    // @RebootRequired: True
+    GSCALAR(pmu_port, "PMU_PORT", -1),
+#endif
+
     AP_VAREND
 };
 
