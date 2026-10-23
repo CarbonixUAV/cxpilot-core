@@ -340,6 +340,35 @@ public:
     void apd_esc_telem_update();
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_PMU_TELEM
+    // Plettenberg S-GCU RS232 telemetry, see pmu_telem.cpp
+    void pmu_telem_init();
+    void pmu_telem_update();
+    bool pmu_telem_parse_line();
+    void pmu_telem_send(bool stale);
+    struct {
+        AP_HAL::UARTDriver *uart;
+        char line[128];
+        uint8_t len;
+        char mode;
+        bool brake;
+        float throttle_v;
+        float aux_v;
+        uint16_t pwm;
+        float voltage;
+        float current;
+        uint32_t rpm;
+        int16_t temp_con;
+        int16_t temp_mot;
+        uint32_t good_count;
+        uint32_t err_count;
+        uint32_t last_good_ms;
+        uint32_t last_send_ms;
+        bool new_line;
+        bool err_since_send;
+    } pmu;
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
 #if HAL_WITH_ESC_TELEM
     AP_ESC_Telem esc_telem;

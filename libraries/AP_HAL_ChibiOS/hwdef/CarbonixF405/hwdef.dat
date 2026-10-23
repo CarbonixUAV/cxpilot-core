@@ -156,4 +156,7 @@ define AP_BATT_MONITOR_MAX_INSTANCES 1
 # enable sending ESC ExtendedStatus
 define AP_EXTENDED_ESC_TELEM_ENABLED 1
 
+# Plettenberg S-GCU RS232 telemetry, port set by PMU_PORT (UART4 = 3)
+define HAL_PERIPH_ENABLE_PMU_TELEM
+
 define CAN_APP_NODE_NAME "org.ardupilot.CarbonixF405"

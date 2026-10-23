@@ -284,6 +284,10 @@ void AP_Periph_FW::init()
     }
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_PMU_TELEM
+    pmu_telem_init();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_MSP
     if (g.msp_port >= 0) {
         msp_init(hal.serial(g.msp_port));
@@ -507,6 +511,10 @@ void AP_Periph_FW::update()
     batt_balance_update();
 #endif
     
+#ifdef HAL_PERIPH_ENABLE_PMU_TELEM
+    pmu_telem_update();
+#endif
+
     static uint32_t fiftyhz_last_update_ms;
     if (now - fiftyhz_last_update_ms >= 20) {
         // update at 50Hz
