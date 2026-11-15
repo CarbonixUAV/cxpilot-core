@@ -412,6 +412,16 @@ void SITL_State::_simulator_servos(struct sitl_input &input)
         }
     }
 
+    // apply the servo scales set by scripting
+    if (_sitl != nullptr) {
+        for (uint8_t i=0; i<SITL_NUM_CHANNELS; i++) {
+            const float scale = _sitl->get_servo_scale(i);
+            if (!is_equal(scale, 1.0f) && input.servos[i] > 1000) {
+                input.servos[i] = static_cast<uint16_t>(((input.servos[i] - 1000) * scale) + 1000);
+            }
+        }
+    }
+
     if (_vehicle == ArduPlane) {
         float forward_throttle = constrain_float((input.servos[2] - 1000) / 1000.0f, 0.0f, 1.0f);
         // do a little quadplane dance
