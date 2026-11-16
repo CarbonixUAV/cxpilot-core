@@ -410,13 +410,14 @@ void AP_Periph_FW::show_stack_free()
 }
 #endif
 
+
 void AP_Periph_FW::can_transceiver_test_update()
 {
 #if defined(HAL_CAN_TRANSCEIVER_TEST) && \
     defined(HAL_GPIO_PIN_BUS_FAULT) && \
     defined(HAL_GPIO_PIN_DRVER_SILENT_EN)
 
-    const uint32_t now = AP_HAL::millis();
+    // const uint32_t now = AP_HAL::millis();
     
 // CAN_BUS_FAULT TEST
 
@@ -440,15 +441,15 @@ void AP_Periph_FW::can_transceiver_test_update()
     
         // TCAN337 reports a fault condition (physical shorting or otherwise)
         if(fault_asserted) {
-            can_printf("CAN PHY fault asserted");
+            can_printf("CAN PHY FAULT");
         }
         // TCAN337 FAULT-pin returns LOW - reported condition cleared
         else {
-            can_printf("CAN PHY FAULT cleared");
+            can_printf("CAN PHY FAULT - cleared");
         }
     }
-// CAN_DRVER_SILENT_EN TEST
-    
+/*
+    // CAN_DRVER_SILENT_EN TEST
     static uint32_t last_silent_toggle_ms;  // previous SILENT toggle time
     static bool silent_enabled; // SILENT-pin enabling flag - defined as FALSE here
 
@@ -473,9 +474,131 @@ void AP_Periph_FW::can_transceiver_test_update()
             silent_enabled = true;
         }
     }
+*/
 #endif
 }
 
+
+
+
+/*
+void AP_Periph_FW::led_fault_alert_update()
+{
+#if defined(HAL_GPIO_PIN_LED_POS_EN) && \
+    defined(HAL_GPIO_PIN_LED_STRB_EN) && \
+    defined(HAL_GPIO_PIN_LED_POS_FAULT) && \
+    defined(HAL_GPIO_PIN_LED_STRB_FAULT)
+
+    // 1. Initialise flags to be checked/updated every call of this function
+    // these start as false (i.e. no faults detected)
+    static bool led_faults_initialised;
+    static bool last_pos_fault;
+    static bool last_strb_fault;
+
+    // 2. Read both LED fault pins and define fault as true when pin is LOW (active fault)
+    const bool pos_fault = palReadLine(HAL_GPIO_PIN_LED_POS_FAULT) == PAL_LOW;
+    const bool strb_fault = palReadLine(HAL_GPIO_PIN_LED_STRB_FAULT) == PAL_LOW;
+
+    // gives a debug flag indicating that LED fault monitoring has been initialised just once
+    if (!led_faults_initialised) {
+        can_printf("INFO: LED fault monitoring initialised");
+        led_faults_initialised = true; // Set to true so this only runs ONCE
+    }
+
+    // 3A. Check LED Position fault state has changed and report if fault or cleared
+    // if the fault state has changed, then check if it is active or cleared and report accordingly
+    if (pos_fault != last_pos_fault) {
+        if (pos_fault) {
+            can_printf("ALERT: POS LED fault active");
+        } else {
+            can_printf("INFO: POS LED fault cleared");
+        }
+
+        // update the last known state of the POS LED fault
+        last_pos_fault = pos_fault;
+    }
+
+    // 3B. Check LED Strobe fault state has changed and report if fault or cleared
+    // if the fault state has changed, then check if it is active or cleared and report accordingly
+    if (strb_fault != last_strb_fault) {
+        if (strb_fault) {
+            can_printf("ALERT: STRB LED fault active");
+        } else {
+            can_printf("INFO: STRB LED fault cleared");
+        }
+
+        // update the last known state of the STRB LED fault
+        last_strb_fault = strb_fault;
+    }
+    
+#endif
+}
+*/
+
+void AP_Periph_FW::ADC_input_voltage_update()
+{
+    // Initialise ADC sources for each voltage rail if the corresponding pin is defined
+    #ifdef HAL_GPIO_PIN_8V2_ADC_IN
+        static AP_HAL::AnalogSource *adc_8v2_source = hal.analogin->channel(6); // PA1 8V2_ADC_IN
+    #endif
+    #ifdef HAL_GPIO_PIN_VIN_ADC_IN
+        static AP_HAL::AnalogSource *adc_vin_source = hal.analogin->channel(7); // PA2 VIN_ADC_IN
+    #endif
+    #ifdef HAL_GPIO_PIN_5V_ADC_IN
+        static AP_HAL::AnalogSource *adc_5v_source = hal.analogin->channel(8); // PA3 5V_ADC_IN
+    #endif
+    #ifdef HAL_GPIO_PIN_3V3_ADC_IN
+        static AP_HAL::AnalogSource *adc_3v3_source = hal.analogin->channel(9); // PA4 3V3_ADC_IN
+    #endif
+
+    // Define variables to store ADC readings for each voltage rail
+    float adc_8v2 = 0.0f;
+    float adc_vin = 0.0f;
+    float adc_5v = 0.0f;
+    float adc_3v3 = 0.0f;
+
+    // Read ADC values for the defined pins.
+    // Apply necessary scaling to get pure input value (undoing the effect of voltage dividers)
+    #ifdef HAL_GPIO_PIN_8V2_ADC_IN
+        adc_8v2 = adc_8v2_source->voltage_latest() * 4.0f;  // Voltage divider ratio was 1/4
+    #endif
+    #ifdef HAL_GPIO_PIN_VIN_ADC_IN
+        adc_vin = adc_vin_source->voltage_latest() * 11.0f;  // Voltage divider ratio was 1/11
+    #endif
+    #ifdef HAL_GPIO_PIN_5V_ADC_IN
+        adc_5v = adc_5v_source->voltage_latest() * 2.0f;  // Voltage divider ratio was 1/2
+    #endif
+    #ifdef HAL_GPIO_PIN_3V3_ADC_IN
+        adc_3v3 = adc_3v3_source->voltage_latest() * 1.5f;  // Voltage divider ratio was 2/3, so 3/2
+    #endif
+
+    const uint32_t now = AP_HAL::millis();
+    static uint32_t last_canprintf_ms;
+
+    // Print the ADC readings for each voltage rail
+    if (now - last_canprintf_ms >= 4000U) {
+        last_canprintf_ms = now;
+        can_printf("ADC: 8V2=%.2f VIN=%.2f 5V=%.2f 3V3=%.2f", adc_8v2, adc_vin, adc_5v, adc_3v3);
+    }
+}
+
+void AP_Periph_FW::PWR_Toggle()
+{
+    // Toggle the 8V2 and 5V power rails every 5 seconds
+
+    const uint32_t now = AP_HAL::millis();
+    static uint32_t last_toggle_ms;
+
+    if (now - last_toggle_ms >= 5000U) {
+        #ifdef HAL_GPIO_PIN_8V2_PWR_EN
+            palToggleLine(HAL_GPIO_PIN_8V2_PWR_EN);
+        #endif
+        #ifdef HAL_GPIO_PIN_5V_PWR_EN
+            palToggleLine(HAL_GPIO_PIN_5V_PWR_EN);
+        #endif
+        last_toggle_ms = now;
+    }
+}
 
 void AP_Periph_FW::update()
 {
@@ -485,7 +608,11 @@ void AP_Periph_FW::update()
 
     static uint32_t last_led_ms;
     uint32_t now = AP_HAL::millis();
-    can_transceiver_test_update(); //CAN IO HEALTH TEST FUNCTION CALL
+    // can_transceiver_test_update(); //CAN IO Health test function call
+    // led_fault_alert_update(); // LED fault (overcurrent) alert monitoring function call
+    ADC_input_voltage_update(); // ADC input voltage update function call
+    PWR_Toggle(); // Power toggle function call
+
     if (now - last_led_ms > 1000) {
         last_led_ms = now;
 #ifdef HAL_GPIO_PIN_LED
@@ -495,17 +622,17 @@ void AP_Periph_FW::update()
 #endif
 #if defined(HAL_GPIO_PIN_5V_PGOOD) || defined(HAL_GPIO_PIN_8V2_PGOOD)
         can_printf("PGOOD: 5V=%d 8V2=%d",
-#ifdef HAL_GPIO_PIN_5V_PGOOD
-                   (int)palReadLine(HAL_GPIO_PIN_5V_PGOOD),
-#else
-                   -1,
-#endif
-#ifdef HAL_GPIO_PIN_8V2_PGOOD
-                   (int)palReadLine(HAL_GPIO_PIN_8V2_PGOOD)
-#else
-                   -1
-#endif
-                   );
+    #ifdef HAL_GPIO_PIN_5V_PGOOD
+        (int)palReadLine(HAL_GPIO_PIN_5V_PGOOD),
+    #else
+        -1,
+    #endif
+    #ifdef HAL_GPIO_PIN_8V2_PGOOD
+        (int)palReadLine(HAL_GPIO_PIN_8V2_PGOOD)
+    #else
+        -1
+    #endif
+        );
 #endif
 #if AP_TEMPERATURE_SENSOR_ENABLED
         {

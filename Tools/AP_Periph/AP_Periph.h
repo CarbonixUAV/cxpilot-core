@@ -164,6 +164,9 @@ public:
     void init();
     void update();
     void can_transceiver_test_update();
+    //void led_fault_alert_update();
+    void ADC_input_voltage_update();
+    void PWR_Toggle();
 
     Parameters g;
 
