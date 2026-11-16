@@ -1052,3 +1052,4 @@ include SITL/SITL.h depends AP_SIM_ENABLED
 singleton SITL::SIM depends AP_SIM_ENABLED
 singleton SITL::SIM rename sim
 singleton SITL::SIM method set_pose boolean uint8_t'skip_check Location Quaternion Vector3f Vector3f
+singleton SITL::SIM method set_servo_scale boolean uint8_t'skip_check float'skip_check

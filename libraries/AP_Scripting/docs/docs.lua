@@ -4022,3 +4022,11 @@ sim = {}
 ---@param gyro_rads Vector3f_ud -- gyro body rate in rad/s
 ---@return boolean
 function sim:set_pose(instance, loc, orient, velocity_bf, gyro_rads) end
+
+-- Scale a servo output on its way into the physics model, for instance to
+-- emulate a sagging battery: the output becomes 1000 + (pwm - 1000) * scale.
+-- Reverts to 1 unless set again within a second.
+---@param chan integer -- servo channel, 0-based
+---@param scale number -- 0 or more
+---@return boolean -- false if the channel or scale is out of range
+function sim:set_servo_scale(chan, scale) end

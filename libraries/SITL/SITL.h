@@ -596,6 +596,22 @@ public:
      */
     bool set_pose(uint8_t instance, const Location &loc, const Quaternion &quat,
                   const Vector3f &velocity_ef, const Vector3f &gyro_rads);
+
+    /*
+      used by scripting to scale servo outputs on their way into the
+      physics model, for instance to emulate a sagging battery: the
+      channel's output becomes 1000 + (pwm - 1000) * scale. A scale not
+      set again within SERVO_SCALE_TIMEOUT_MS reverts to 1
+     */
+    bool set_servo_scale(uint8_t chan, float scale);
+    float get_servo_scale(uint8_t chan) const;
+
+private:
+    static constexpr uint32_t SERVO_SCALE_TIMEOUT_MS = 1000;
+    struct {
+        float scale;
+        uint32_t set_ms;
+    } servo_scales[SITL_NUM_CHANNELS] {};
 };
 
 } // namespace SITL

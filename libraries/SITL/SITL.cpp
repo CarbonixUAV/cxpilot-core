@@ -1786,6 +1786,31 @@ float SIM::measure_distance_at_angle_bf(const Location &location, float angle) c
     return min_dist_cm * 0.01f;
 }
 
+/*
+  scale a servo output on its way into the physics model; used by scripting
+ */
+bool SIM::set_servo_scale(uint8_t chan, float scale)
+{
+    if (chan >= ARRAY_SIZE(servo_scales) || !isfinite(scale) || is_negative(scale)) {
+        return false;
+    }
+    servo_scales[chan].scale = scale;
+    servo_scales[chan].set_ms = AP_HAL::millis();
+    return true;
+}
+
+float SIM::get_servo_scale(uint8_t chan) const
+{
+    if (chan >= ARRAY_SIZE(servo_scales)) {
+        return 1;
+    }
+    const auto &s = servo_scales[chan];
+    if (s.set_ms == 0 || AP_HAL::millis() - s.set_ms > SERVO_SCALE_TIMEOUT_MS) {
+        return 1;
+    }
+    return s.scale;
+}
+
 } // namespace SITL
 
 namespace AP {
