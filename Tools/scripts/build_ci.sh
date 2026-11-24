@@ -58,7 +58,9 @@ function install_mavproxy() {
     if [ $mavproxy_installed -eq 0 ]; then
         echo "Installing MAVProxy"
         pushd /tmp
-          git clone https://github.com/ardupilot/MAVProxy --depth 1
+          # pinned so MAVProxy master cannot change behaviour under this
+          # branch's frozen autotest harness; bump it deliberately
+          git clone https://github.com/ardupilot/MAVProxy --depth 1 --branch v1.8.75
           pushd MAVProxy
             python3 -m pip install --progress-bar off --cache-dir /tmp/pip-cache --user --force --no-deps .
           popd
