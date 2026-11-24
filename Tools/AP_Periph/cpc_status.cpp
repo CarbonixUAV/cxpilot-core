@@ -15,7 +15,7 @@
     [1] temp_alert:  bit0 8V2, bit1 5V, bit2 3V3, bit3 BRD
     [2] pgood_fault: bit0 5V, bit1 8V2, bit2 3V3
     [3] led_flt:     bit0 STROBE, bit1 POSITION
-    [4] can_fault:   bit0 TCAN337 FAULT
+    [4] can_fault:   bit0 TCAN337 FAULT, held 5s after it clears
   All bits are 1 = fault. Pins are sampled every loop and latched until the
   next send so faults shorter than the send interval are still reported.
  */
@@ -23,6 +23,7 @@
 #define CPC_STATUS_FLEXDEBUG_ID 200
 #define CPC_STATUS_VERSION 1
 #define CPC_STATUS_SEND_INTERVAL_MS 1000
+#define CPC_STATUS_CAN_FAULT_HOLD_MS 5000
 
 void AP_Periph_FW::cpc_status_update()
 {
@@ -65,12 +66,18 @@ void AP_Periph_FW::cpc_status_update()
     latch(2, 1, palReadLine(HAL_GPIO_PIN_LED_POSITION_FLT));
 #endif
 
-    // TCAN337 FAULT is HIGH on fault
+    const uint32_t now_ms = AP_HAL::millis();
+
+    // TCAN337 FAULT is HIGH on fault. Held after it clears so packets sent
+    // once the bus recovers still carry it.
 #ifdef HAL_GPIO_PIN_XCVR_BUS_FAULT
-    latch(3, 0, palReadLine(HAL_GPIO_PIN_XCVR_BUS_FAULT));
+    if (palReadLine(HAL_GPIO_PIN_XCVR_BUS_FAULT)) {
+        cpc_status_can_fault_ms = now_ms;
+    }
+    latch(3, 0, cpc_status_can_fault_ms != 0 &&
+                now_ms - cpc_status_can_fault_ms < CPC_STATUS_CAN_FAULT_HOLD_MS);
 #endif
 
-    const uint32_t now_ms = AP_HAL::millis();
     if (now_ms - cpc_status_last_send_ms < CPC_STATUS_SEND_INTERVAL_MS) {
         return;
     }

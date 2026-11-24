@@ -235,6 +235,7 @@ public:
     void cpc_status_update();
     uint32_t cpc_status_last_send_ms;
     uint8_t cpc_status_latch[4];
+    uint32_t cpc_status_can_fault_ms;   // last time TCAN337 FAULT was seen HIGH, 0 = never
 
     // DroneCAN-param test toggles of CPC output pins, see cpc_test.cpp
     void cpc_test_update();
