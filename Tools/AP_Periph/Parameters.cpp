@@ -737,6 +737,40 @@ const AP_Param::Info AP_Periph_FW::var_info[] = {
     GOBJECT(imu, "INS", AP_InertialSensor),
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_CPC_STATUS
+    // @Param: CPC_TOG_5V
+    // @DisplayName: CPC test toggle 5V_PWR_EN
+    // @Description: Test only. Toggle period of the 5V rail enable. 0 disables the test and holds the rail on, -1 holds it off. Reset to 0 at boot.
+    // @Units: ms
+    // @Range: -1 32767
+    // @User: Advanced
+    GSCALAR(cpc_tog_5v, "CPC_TOG_5V", 0),
+
+    // @Param: CPC_TOG_8V2
+    // @DisplayName: CPC test toggle 8V2_PWR_EN
+    // @Description: Test only. Toggle period of the 8V2 rail enable. 0 disables the test and holds the rail on, -1 holds it off. Reset to 0 at boot.
+    // @Units: ms
+    // @Range: -1 32767
+    // @User: Advanced
+    GSCALAR(cpc_tog_8v2, "CPC_TOG_8V2", 0),
+
+    // @Param: CPC_TOG_STB
+    // @DisplayName: CPC test toggle LED_STROBE_EN
+    // @Description: Test only. Toggle period of the strobe LED switch enable. 0 disables the test and holds the LED on, -1 holds it off. Reset to 0 at boot.
+    // @Units: ms
+    // @Range: -1 32767
+    // @User: Advanced
+    GSCALAR(cpc_tog_stb, "CPC_TOG_STB", 0),
+
+    // @Param: CPC_TOG_POS
+    // @DisplayName: CPC test toggle LED_POSITION_EN
+    // @Description: Test only. Toggle period of the position LED switch enable. 0 disables the test and holds the LED on, -1 holds it off. Reset to 0 at boot.
+    // @Units: ms
+    // @Range: -1 32767
+    // @User: Advanced
+    GSCALAR(cpc_tog_pos, "CPC_TOG_POS", 0),
+#endif
+
     AP_VAREND
 };
 
