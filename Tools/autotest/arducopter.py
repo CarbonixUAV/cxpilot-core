@@ -12373,7 +12373,7 @@ return update, 1000
             self.SMART_RTL_EnterLeave,
             self.RTL_TO_RALLY,
             self.FlyEachFrame,
-            self.ScriptParamRegistration,
+            Test(self.ScriptParamRegistration, speedup=8),
             self.GPSBlending,
             self.GPSWeightedBlending,
             self.GPSBlendingLog,
