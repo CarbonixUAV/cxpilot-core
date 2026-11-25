@@ -187,7 +187,12 @@ jobs:
         env:
           PATH: /usr/bin:$(cygpath ${SYSTEMROOT})/system32
         shell: C:\cygwin\bin\bash.exe -eo pipefail '{0}'
+        # setuptools 84 dropped pkg_resources. On Cygwin, dronecan_dsdlc's spawned
+        # Pool workers fall back to the modules/DroneCAN/pydronecan submodule,
+        # which imports it, and the build hangs. Drop the pin once that submodule
+        # is past pydronecan 7d350ba2c7, which stops using pkg_resources.
         run: >-
+          python3 -m pip install --progress-bar off setuptools==80.9.0 &&
           python3 -m pip install --progress-bar off empy==3.3.4 pexpect &&
           python3 -m pip install --progress-bar off dronecan --upgrade &&
           cp /usr/bin/ccache /usr/local/bin/ &&

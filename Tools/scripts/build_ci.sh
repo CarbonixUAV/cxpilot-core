@@ -7,6 +7,10 @@ XOLDPWD=$PWD  # profile changes directory :-(
 
 . ~/.profile
 
+if [ "$CI" = "true" ]; then
+  export PIP_ROOT_USER_ACTION=ignore
+fi
+
 cd $XOLDPWD
 
 set -ex
@@ -14,6 +18,11 @@ set -ex
 # CXX and CC are exported by default by travis
 c_compiler=${CC:-gcc}
 cxx_compiler=${CXX:-g++}
+
+# we want processes to exit in CI.  If we don't end up calling
+# alarm_handler and not getting the binaries in the failure archive on
+# github.
+export SITL_PANIC_EXIT=1
 
 export BUILDROOT=/tmp/ci.build
 rm -rf $BUILDROOT
@@ -40,7 +49,7 @@ function install_pymavlink() {
     if [ $pymavlink_installed -eq 0 ]; then
         echo "Installing pymavlink"
         git submodule update --init --recursive --depth 1
-        (cd modules/mavlink/pymavlink && python3 -m pip install --user .)
+        (cd modules/mavlink/pymavlink && python3 -m pip install --progress-bar off --cache-dir /tmp/pip-cache --user .)
         pymavlink_installed=1
     fi
 }
@@ -49,14 +58,18 @@ function install_mavproxy() {
     if [ $mavproxy_installed -eq 0 ]; then
         echo "Installing MAVProxy"
         pushd /tmp
-          git clone https://github.com/ardupilot/MAVProxy --depth 1
+          # pinned so MAVProxy master cannot change behaviour under this
+          # branch's frozen autotest harness; bump it deliberately
+          git clone https://github.com/ardupilot/MAVProxy --depth 1 --branch v1.8.75
           pushd MAVProxy
-            python3 -m pip install --user --force .
+            python3 -m pip install --progress-bar off --cache-dir /tmp/pip-cache --user --force --no-deps .
           popd
         popd
+        # MAVProxy's core dependencies only; its map3d ones (vtk,
+        # opencv-python, matplotlib, ...) are ~270MB that autotest
+        # never imports.  pymavlink comes from our submodule
+        python3 -m pip install --progress-bar off --cache-dir /tmp/pip-cache --user defusedxml pyserial numpy pynmeagps
         mavproxy_installed=1
-        # now uninstall the version of pymavlink pulled in by MAVProxy deps:
-        python3 -m pip uninstall -y pymavlink
     fi
 }
 
@@ -454,7 +467,7 @@ for t in $CI_BUILD_TARGET; do
         echo "Building signed firmwares"
         sudo apt-get update
         sudo apt-get install -y python3-dev
-        python3 -m pip install pymonocypher==3.1.3.2
+        python3 -m pip install pymonocypher==3.1.3.2 --progress-bar off --cache-dir /tmp/pip-cache
         ./Tools/scripts/signing/generate_keys.py testkey
         $waf configure --board CubeOrange-ODID --signed-fw --private-key testkey_private_key.dat
         $waf copter

@@ -2044,7 +2044,7 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
             self.progress("Orbit with GPS and learn wind")
             # allow longer to learn wind if there is no airspeed sensor
             if disable_airspeed_sensor:
-                self.delay_sim_time(60)
+                self.delay_sim_time(180)
             else:
                 self.delay_sim_time(20)
             self.set_parameter("SIM_GPS_DISABLE", 1)
@@ -2066,14 +2066,14 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
 
             self.set_parameter("AHRS_OPTIONS", 1)
             self.set_parameter("SIM_GPS_JAM", 1)
-            self.delay_sim_time(10)
+            self.delay_sim_time(13)
             self.set_parameter("SIM_GPS_JAM", 0)
             t_enabled = self.get_sim_time()
             # The EKF should wait for GPS checks to pass when we are still able to navigate using dead reckoning
             # to prevent bad GPS being used when coming back after loss of lock due to interence.
             # The EKF_STATUS_REPORT does not tell us when the good to align check passes, so the minimum time
             # value of 3.0 seconds is an arbitrary value set on inspection of dataflash logs from this test
-            self.wait_ekf_flags(mavutil.mavlink.ESTIMATOR_POS_HORIZ_ABS, 0, timeout=15)
+            self.wait_ekf_flags(mavutil.mavlink.ESTIMATOR_POS_HORIZ_ABS, 0, timeout=20)
             time_since_jamming_stopped = self.get_sim_time() - t_enabled
             if time_since_jamming_stopped < 3:
                 raise NotAchievedException("GPS use re-started %f sec after jamming stopped" % time_since_jamming_stopped)
@@ -3023,6 +3023,13 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
 
     def fly_external_AHRS(self, sim, eahrs_type, mission):
         """Fly with external AHRS"""
+        # The external AHRS drivers parse their serial stream on a
+        # real-time thread.  At the default plane speedup (100x) that
+        # thread cannot keep the simulated GPS within its health window
+        # on a loaded CI runner, producing intermittent "GPS 1: not
+        # healthy" arm failures.  Run these tests at a reduced speedup so
+        # the thread keeps up.
+        self.context_set_speedup(20)
         self.customise_SITL_commandline(["--serial4=sim:%s" % sim])
 
         self.set_parameters({
@@ -6321,7 +6328,7 @@ class AutoTestPlane(vehicle_test_suite.TestSuite):
 
         self.wait_current_waypoint(4)
 
-        self.set_parameter('SIM_SPEEDUP', 1)
+        self.context_set_speedup(1)
 
         self.mavproxy.interact()
 

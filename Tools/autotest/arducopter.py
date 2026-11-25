@@ -7669,78 +7669,72 @@ class AutoTestCopter(vehicle_test_suite.TestSuite):
 
     def AC_Avoidance_Proximity_AVOID_ALT_MIN(self):
         '''Test proximity avoidance with AVOID_ALT_MIN'''
-        self.context_push()
-        ex = None
-        try:
-            self.set_parameters({
-                "PRX1_TYPE": 2,
-                "AVOID_ALT_MIN": 10,
-            })
-            self.set_analog_rangefinder_parameters()
-            self.reboot_sitl()
-
-            self.change_mode('LOITER')
-            self.wait_ekf_happy()
-
-            tstart = self.get_sim_time()
-            while True:
-                if self.armed():
-                    break
-                if self.get_sim_time_cached() - tstart > 60:
-                    raise AutoTestTimeoutException("Did not arm")
-                self.mav.mav.distance_sensor_send(
-                    0, # time_boot_ms
-                    10, # min_distance cm
-                    500, # max_distance cm
-                    400, # current_distance cm
-                    mavutil.mavlink.MAV_DISTANCE_SENSOR_LASER, # type
-                    26, # id
-                    mavutil.mavlink.MAV_SENSOR_ROTATION_NONE, # orientation
-                    255  # covariance
-                )
-                self.send_mavlink_arm_command()
-
-            self.takeoff(15, mode='LOITER')
-            self.progress("Poking vehicle; should avoid")
-
-            def shove(a, b):
-                self.mav.mav.distance_sensor_send(
-                    0,  # time_boot_ms
-                    10, # min_distance cm
-                    500, # max_distance cm
-                    20, # current_distance cm
-                    mavutil.mavlink.MAV_DISTANCE_SENSOR_LASER, # type
-                    21, # id
-                    mavutil.mavlink.MAV_SENSOR_ROTATION_NONE, # orientation
-                    255  # covariance
-                )
-            self.wait_speed_vector_bf(
-                Vector3(-0.4, 0.0, 0.0),
-                timeout=10,
-                called_function=shove,
-            )
-
-            self.change_alt(5)
-
-            tstart = self.get_sim_time()
-            while True:
-                if self.get_sim_time_cached() - tstart > 10:
-                    break
-                vel = self.get_body_frame_velocity()
-                if vel.length() > 0.5:
-                    raise NotAchievedException("Moved too much (%s)" %
-                                               (str(vel),))
-                shove(None, None)
-
-        except Exception as e:
-            self.progress("Caught exception: %s" %
-                          self.get_exception_stacktrace(e))
-            ex = e
-        self.disarm_vehicle(force=True)
-        self.context_pop()
+        self.set_parameters({
+            "PRX1_TYPE": 2,
+            "AVOID_ALT_MIN": 10,
+        })
+        self.set_analog_rangefinder_parameters()
         self.reboot_sitl()
-        if ex is not None:
-            raise ex
+
+        self.change_mode('LOITER')
+        self.wait_ekf_happy()
+
+        self.set_parameter("SIM_SPEEDUP", 20)
+
+        tstart = self.get_sim_time()
+        while True:
+            if self.armed(cached=True):
+                break
+            if self.get_sim_time_cached() - tstart > 60:
+                raise AutoTestTimeoutException("Did not arm")
+            self.mav.mav.distance_sensor_send(
+                0, # time_boot_ms
+                10, # min_distance cm
+                500, # max_distance cm
+                400, # current_distance cm
+                mavutil.mavlink.MAV_DISTANCE_SENSOR_LASER, # type
+                26, # id
+                mavutil.mavlink.MAV_SENSOR_ROTATION_NONE, # orientation
+                255  # covariance
+            )
+            self.send_mavlink_arm_command()
+            # make a minimal effort to not do ridiculous amounts of
+            # mavlink to the autopilot:
+            self.do_timesync_roundtrip()
+
+        self.takeoff(15, mode='LOITER')
+        self.progress("Poking vehicle; should avoid")
+
+        def shove(a, b):
+            self.mav.mav.distance_sensor_send(
+                0,  # time_boot_ms
+                10, # min_distance cm
+                500, # max_distance cm
+                20, # current_distance cm
+                mavutil.mavlink.MAV_DISTANCE_SENSOR_LASER, # type
+                21, # id
+                mavutil.mavlink.MAV_SENSOR_ROTATION_NONE, # orientation
+                255  # covariance
+            )
+        self.wait_speed_vector_bf(
+            Vector3(-0.4, 0.0, 0.0),
+            timeout=10,
+            called_function=shove,
+        )
+
+        self.change_alt(5)
+
+        tstart = self.get_sim_time()
+        while True:
+            if self.get_sim_time_cached() - tstart > 10:
+                break
+            vel = self.get_body_frame_velocity()
+            if vel.length() > 0.5:
+                raise NotAchievedException("Moved too much (%s)" %
+                                           (str(vel),))
+            shove(None, None)
+
+        self.disarm_vehicle(force=True)
 
     def AC_Avoidance_Fence(self):
         '''Test fence avoidance slide behaviour'''
@@ -9487,6 +9481,7 @@ class AutoTestCopter(vehicle_test_suite.TestSuite):
         self.set_parameters({
             "LOG_DARM_RATEMAX": 0,
             "LOG_FILE_RATEMAX": 0,
+            "LOG_FILE_BUFSIZE": 32767,
         })
 
         bits = [
@@ -10334,35 +10329,13 @@ class AutoTestCopter(vehicle_test_suite.TestSuite):
 
     def ATTITUDE_FAST(self):
         '''ensure that when ATTITUDE_FAST is set we get many messages'''
-        self.context_push()
-        ex = None
-        try:
-            log_bitmask_old = int(self.get_parameter('LOG_BITMASK'))
 
-            # enable fast logging (bit 1)
-            # disable PID logging (bit 12) to avoid slowdowns in attitude logging in SITL
-            log_bitmask_new = (log_bitmask_old | (1 << 0)) & ~(1 << 12)
+        # enable fast logging (bit 1)
+        # disable PID logging (bit 12) to avoid slowdowns in attitude logging in SITL
+        log_bitmask_old = int(self.get_parameter('LOG_BITMASK'))
+        log_bitmask_new = (log_bitmask_old | (1 << 0)) & ~(1 << 12)
 
-            self.set_parameters({
-                "LOG_BITMASK": log_bitmask_new,
-                "LOG_DISARMED": 1,
-                "LOG_DARM_RATEMAX": 0,
-                "LOG_FILE_RATEMAX": 0,
-            })
-            path = self.generate_rate_sample_log()
-
-        except Exception as e:
-            self.print_exception_caught(e)
-            ex = e
-
-        self.context_pop()
-
-        self.reboot_sitl()
-
-        if ex is not None:
-            raise ex
-
-        self.delay_sim_time(10)  # NFI why this is required
+        path = self.generate_rate_sample_log(log_bitmask=log_bitmask_new)
 
         self.check_dflog_message_rates(path, {
             'ANG': 400,
@@ -10370,12 +10343,7 @@ class AutoTestCopter(vehicle_test_suite.TestSuite):
 
     def BaseLoggingRates(self):
         '''ensure messages come out at specific rates'''
-        self.set_parameters({
-            "LOG_DARM_RATEMAX": 0,
-            "LOG_FILE_RATEMAX": 0,
-        })
         path = self.generate_rate_sample_log()
-        self.delay_sim_time(10)  # NFI why this is required
         self.check_dflog_message_rates(path, {
             "ATT": 10,
             "IMU": 25,
@@ -12405,13 +12373,13 @@ return update, 1000
             self.SMART_RTL_EnterLeave,
             self.RTL_TO_RALLY,
             self.FlyEachFrame,
-            self.ScriptParamRegistration,
+            Test(self.ScriptParamRegistration, speedup=8),
             self.GPSBlending,
             self.GPSWeightedBlending,
             self.GPSBlendingLog,
             self.GPSBlendingAffinity,
             self.DataFlash,
-            Test(self.DataFlashErase, attempts=8),
+            self.DataFlashErase,
             self.Callisto,
             self.PerfInfo,
             self.Replay,
